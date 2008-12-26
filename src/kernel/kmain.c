@@ -89,8 +89,7 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
 
    /* Load a temporary, garbage task and switch to the system task */
    __asm__ __volatile__ ("ltr %0" : : "R" PROCESS_TSS(GARBAGE, RING0));
-   __asm__ __volatile__ ("sti");
-
+   
    process_switch(SYSTEM, RING0);
    Panic("%s", "Why am I here?");
 }
