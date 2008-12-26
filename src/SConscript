@@ -9,6 +9,7 @@ env.Replace(
                  '-Wno-unused-parameter',
                  '-nostdinc',
                  '-ffreestanding',
+                 '-fno-stack-protector',
                  '-iwithprefix', 'include',
                  '-std=c99',
                  '-pedantic',
@@ -16,7 +17,6 @@ env.Replace(
                  '-g3',
                  '-O0',
                  '-m32',
-                 '-fno-stack-protector',
     ],
     ASFLAGS   = ['-gstabs+',
                  '-g3',
@@ -26,27 +26,19 @@ env.Replace(
     LINKFLAGS = ['-nodefaultlibs',
                  '-nostartfiles',
                  '-nostdlib',
-                 '-T$LINKER_SCRIPT',
                  '-m32',
                  '-Wl,--fatal-warnings',
     ],
     CPPPATH   = ['#include',
     ],
-    LINKER_SCRIPT = env.File('ld/link.ld'),
 )
 
 # Ask each subdirectory to build itself and return the object files
 objects = []
-objects += env.SConscript(dirs=['kernel', 'drivers', 'libs', 'arch/i386'],
-                          exports=['env'])
-
-# Building the kernel depends on the linker script
-env.Depends('tacos', '$LINKER_SCRIPT')
-# XXX: I don't think there's a better way to get to boot.o ...
-env.Depends('tacos', File('#bld/arch/i386/boot/boot.o'))
+objects += env.SConscript(dirs=['kernel', 'drivers', 'libs'], exports=['env'])
 
 # Link all the object files together to create the kernel
-kernel = env.Program(target='tacos', source=objects)
+kernel = env.SConscript('arch/i386/SConscript', exports=['env', 'objects'])
 env.Alias('tacos', kernel)
 
 # Create a bootable ISO image
