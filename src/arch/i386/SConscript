@@ -1,9 +1,19 @@
 # -*- mode: python -*-
+Import(['env', 'objects'])
 
-Import('env')
-
-objects = []
+# Build the i386-specific files.
 objects += env.SConscript('boot/SConscript', exports=['env'])
 objects += env.StaticObject('rtc.S')
 
-Return('objects')
+# Modify the SCons environment for linking an i386 kernel.
+env.Append(
+    LINKFLAGS=['-T$LDSCRIPT'],
+    LDSCRIPT=env.File('ld/link.ld'),
+)
+
+# Create the kernel.
+kernel = env.Program('kernel', objects)
+env.Depends(kernel, '$LDSCRIPT')
+env.Depends(kernel, env.File('boot/boot.o'))
+
+Return('kernel')
