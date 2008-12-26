@@ -1,14 +1,14 @@
 # -*- mode: python -*-
 Import('env')
 
-# Set up the SCons environment
+# Create the SCons environment.
 env.Replace(
     CFLAGS    = ['-Wall',
                  '-Wextra',
                  '-Werror',
                  '-Wno-unused-parameter',
                  '-nostdinc',
-                 '-fno-builtin',
+                 '-ffreestanding',
                  '-iwithprefix', 'include',
                  '-std=c99',
                  '-pedantic',
@@ -30,24 +30,39 @@ env.Replace(
                  '-m32',
                  '-Wl,--fatal-warnings',
     ],
-    CPPPATH   = ['#bld/include',
+    CPPPATH   = ['#include',
     ],
     LINKER_SCRIPT = env.File('ld/link.ld'),
 )
 
 # Ask each subdirectory to build itself and return the object files
-objects = env.SConscript(
-    ['kernel/SConscript',
-     'drivers/SConscript',
-     'libs/SConscript',
-     'arch/i386/SConscript',
-    ],
-    exports=['env'],
-)
+objects = []
+objects += env.SConscript(dirs=['kernel', 'drivers', 'libs', 'arch/i386'],
+                          exports=['env'])
 
-# Building the kernel depends on the linker script existing
+# Building the kernel depends on the linker script
 env.Depends('tacos', '$LINKER_SCRIPT')
+# XXX: I don't think there's a better way to get to boot.o ...
+env.Depends('tacos', File('#bld/arch/i386/boot/boot.o'))
 
 # Link all the object files together to create the kernel
-program = env.Program(target='tacos', source=objects)
-env.Alias('tacos', program)
+kernel = env.Program(target='tacos', source=objects)
+env.Alias('tacos', kernel)
+
+# Create a bootable ISO image
+iso = env.MkIsoFs(
+    target='tacos.iso',
+    source=[Dir('iso'),
+            File('iso/boot/grub/menu.lst'),
+            File('iso/boot/grub/stage2_eltorito'),
+            env.Command('iso/boot/tacos', kernel, Copy('$TARGET', '$SOURCE')),
+    ],
+    MKISOFSFLAGS=['-R',
+                  '-b', 'boot/grub/stage2_eltorito',
+                  '-no-emul-boot',
+                  '-boot-load-size', '4',
+                  '-boot-info-table',
+                  '-quiet',
+    ],
+)
+env.Alias('tacos-iso', iso)

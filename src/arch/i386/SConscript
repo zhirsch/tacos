@@ -3,6 +3,7 @@
 Import('env')
 
 objects = []
-env.SConscript('boot/SConscript', exports=['env'])
+objects += env.SConscript('boot/SConscript', exports=['env'])
+objects += env.StaticObject('rtc.S')
 
 Return('objects')

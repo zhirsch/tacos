@@ -1,8 +1,0 @@
-# -*- mode: python -*-
-
-Import('env')
-
-objects = []
-env.Object('boot.S'
-
-Return('objects')

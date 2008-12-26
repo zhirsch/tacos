@@ -11,8 +11,6 @@
  * cpuid
  *   Issue the cpuid instruction and return the results.
  *****************************************************************************/
-extern void cpuid(uint32_t level, uint32_t *eax, uint32_t *ebx,  uint32_t *ecx,
-		  uint32_t *edx);
-
+void cpuid(uint32_t level, uint32_t *eax, uint32_t *ebx,  uint32_t *ecx, uint32_t *edx);
 
 #endif /* CPUID_H */

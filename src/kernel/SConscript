@@ -9,5 +9,8 @@ objects += env.Object('kprintf.c')
 objects += env.Object('panic.c')
 objects += env.Object('process.c')
 objects += env.Object('screen.c')
+objects += env.Object('segments.c')
+objects += env.Object('interrupts.c')
+objects += env.SConscript('intr/SConscript', exports=['env'])
 
 Return('objects')
