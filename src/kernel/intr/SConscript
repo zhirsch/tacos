@@ -1,0 +1,9 @@
+# -*- mode: python -*-
+
+Import('env')
+
+objects = []
+objects += env.Object('handlers.c')
+objects += env.Object('handler_stubs.S')
+
+Return('objects')

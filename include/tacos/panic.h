@@ -12,6 +12,7 @@
  *   Print out a message.
  *****************************************************************************/
 #define Info(format, ...) _Info(__FILE__, __LINE__, format, ##__VA_ARGS__)
+#define InfoMsg(msg) Info("%s", msg)
 extern void _Info(const char *file, uint32_t line, const char *format, ...)
    __attribute__ ((format(printf, 3, 4)));
 

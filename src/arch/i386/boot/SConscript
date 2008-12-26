@@ -1,10 +1,9 @@
 # -*- mode: python -*-
-
 Import('env')
 
 objects = []
 # Assemble boot.S, but don't add it to the objects list. The linker script
 # links it for us.
-env.Object('boot.S')
+env.StaticObject('boot.S')
 
 Return('objects')

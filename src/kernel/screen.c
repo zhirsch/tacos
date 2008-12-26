@@ -32,10 +32,10 @@ static void scroll(void)
    {
       /* A blank is a space -- use the current attributes */
       blank = ' ' | (attrib << 8);
-      
+
       /* Move line 1 through MAXLINES up one line */
       memcpy(VGAMEMBASE, VGAMEMBASE + MAXCOLS, (MAXLINES - 1) * MAXCOLS * 2);
-      
+
       /* Blank out the last line */
       memsetw(VGAMEMBASE + (MAXLINES - 1) * MAXCOLS, blank, MAXCOLS);
 
@@ -90,7 +90,7 @@ void putch(unsigned char ch)
 
    if (ch == 0x08) { /* backspace */
       if (cursor.x > 0)
-	 cursor.x--;
+         cursor.x--;
    }
    else if (ch == '\t') {
       /* make sure the last 3 bits are 0 -- 8 space aligned tabs */
@@ -107,7 +107,7 @@ void putch(unsigned char ch)
    }
    else if (ch >= ' ') {
       /* anything >= a space is printable, so print it at the current position
-	 and move to the next column */
+         and move to the next column */
       where = VGAMEMBASE + (cursor.y * MAXCOLS + cursor.x);
       *where = ch | (attrib << 8);
       cursor.x++;

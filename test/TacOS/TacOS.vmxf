@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Foundry>
+<VM>
+<VMId type="string">52 59 ef a5 65 1b f3 13-d0 ab 8a 56 10 c7 ab 78</VMId>
+<ClientMetaData>
+<clientMetaDataAttributes/>
+<HistoryEventList/></ClientMetaData>
+<vmxPathName type="string">TacOS.vmx</vmxPathName></VM></Foundry>
