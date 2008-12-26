@@ -1,0 +1,8 @@
+# -*- mode: python -*-
+
+Import('env')
+
+objects = []
+env.SConscript('boot/SConscript', exports=['env'])
+
+Return('objects')
