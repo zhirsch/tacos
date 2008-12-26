@@ -34,7 +34,8 @@ if not env['V']:
     env['LINKCOMSTR']    = '  LD                $TARGET'
     env['ASPPCOMSTR']    = '  ASPP              $TARGET'
     env['MKISOFSCOMSTR'] = '  MKISOFS           $TARGET'
-    env['CPCOMSTR']      = '  COPY              $TARGET'
+    env['COPYSTR']       = '  COPY              $TARGET'
+    SCons.Script.Copy.strfunc = lambda d, s: env.subst('$COPYSTR', 1, target=d)
 
 # Return the environment to the calling SConscript file
 Return('env')
