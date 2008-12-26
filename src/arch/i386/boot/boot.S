@@ -1,8 +1,6 @@
 #define ASM
 #include <multiboot.h>
 #include <asm/mmu.h>
-#include <asm/process.h>
-#include <asm/interrupts.h>
 
         .text
 
@@ -107,53 +105,6 @@ kernel_pagedir:
         /* Fill in the rest of the page directory */
         .skip   (1024 - KERNEL_PAGE_NUMBER - 1) * 4, 0
 
-/* --------------------------- gdt ----------------------------------------- */
-        .data
-        .align  0x8
-        .globl  gdt
-gdt:
-        .long   0x00000000      /* The NULL descriptor */
-        .long   0x00000000
-
-        .long   0x0000FFFF      /* A RING0 code segment */
-        .long   0x00CF9A00
-
-        .long   0x0000FFFF      /* A RING0 data segment */
-        .long   0x00CF9200
-
-        .long   0x0000FFFF      /* A RING3 code segment */
-        .long   0x00CFFB00
-
-        .long   0x0000FFFF      /* A RING3 data segment */
-        .long   0x00CFF300
-
-        .skip   NUM_PROCESSES * 8, 0  /* Create room for the processes */
-        .skip   NUM_INTERRUPTS * 8, 0 /* Create root for the interrupts */
-gdtp:
-        .word   gdtp - gdt - 1
-        .long   gdt
-
-/* --------------------------- idt ----------------------------------------- */
-        .data
-        .align  0x8
-        .globl  idt
-idt:
-        .skip   NUM_INTERRUPTS * 8, 0 /* The max is 256 entries in an IDT */
-idtp:
-        .word   idtp - idt - 1
-        .long   idt
-
-/* --------------------------- tss ----------------------------------------- */
-        .data
-        .align  0x8
-        .globl  tss
-tss:
-        /* Create enough entries in the tss for the interrupts and processes */
-        /*  (each is 104 bytes long) */
-        .skip   NUM_PROCESSES * 104, 0
-        .skip   NUM_INTERRUPTS * 104, 0
-tssend:
-	
 #if defined(__linux__) && defined(__ELF__)
 	.section .note.GNU-stack,"",%progbits
 #endif
