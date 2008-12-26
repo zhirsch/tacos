@@ -153,3 +153,7 @@ tss:
         .skip   NUM_PROCESSES * 104, 0
         .skip   NUM_INTERRUPTS * 104, 0
 tssend:
+	
+#if defined(__linux__) && defined(__ELF__)
+	.section .note.GNU-stack,"",%progbits
+#endif
