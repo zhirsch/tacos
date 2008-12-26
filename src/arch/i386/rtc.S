@@ -23,3 +23,7 @@ gethour:
         xor     %eax, %eax
         inb     $0x71, %al
         ret
+
+#if defined(__linux__) && defined(__ELF__)
+	.section .note.GNU-stack,"",%progbits
+#endif

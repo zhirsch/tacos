@@ -102,3 +102,8 @@ intr_simd_exception_stub:
         call intr_simd_exception
         popa
         iret
+
+
+#if defined(__linux__) && defined(__ELF__)
+	.section .note.GNU-stack,"",%progbits
+#endif
