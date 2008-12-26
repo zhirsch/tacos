@@ -1,0 +1,80 @@
+/*****************************************************************************
+ * kmain.c
+ *   The entry point into the kernel. Called from kernel/boot/boot.S.
+ *****************************************************************************/
+
+#include <tacos/kernel.h>
+#include <tacos/types.h>
+#include <tacos/panic.h>
+#include <tacos/cpuid.h>
+#include <tacos/process.h>
+#include <tacos/segments.h>
+#include <tacos/screen.h>
+#include <tacos/kprintf.h>
+
+#include <drivers/system.h>
+
+#include <multiboot.h>
+
+/* Create a variable to contain the kernel's version. */
+version_t kversion = { .major = 0, .minor = 1, .tiny = 1 };
+
+/* Declare some universal data structures. These are defined in boot/boot.S */
+extern uint8_t kernel_pagedir[];
+extern uint8_t kstktop[];
+extern gdt_entry_t gdt[];
+extern tss_entry_t tss[];
+
+static INLINE uint32_t memory_get_cr3(void);
+
+/*****************************************************************************
+ * kmain
+ *   This is the big salami.
+ *****************************************************************************/
+void kmain(uint32_t magic, multiboot_info_t *mbi)
+{
+   /* Make sure the magic number is correct  */
+   Assert(magic == MULTIBOOT_BOOTLOADER_MAGIC,
+	  "Wrong magic number passed to kmain: 0x%x\n", magic);
+
+   /* By the time execution reaches here, the following has occurred:
+    *   -- Paging is enabled.
+    *   -- The GDT has been created with the following entries:
+    *     0: the NULL descriptor
+    *     1: a RING0 code segment (for the kernel)
+    *     2: a RING0 data segment (for the kernel)
+    *     3: a RING3 code segment (for applications)
+    *     4: a RING3 data segment (for applications)
+    *     5+ space for task segment descriptors for the other processes
+    *   -- Space has been allocated in the IDT for 256 entries.
+    */
+
+   clearscreen();
+
+   /* Fill in the GDT with segments for each of the TSSs. */
+   for (int i = 0; i < N_PROCESSES; i++)
+   {
+      /* XXX: I don't like all these magic numbers */
+      uint64_t tssp = (uint64_t)(uintptr_t)(tss + i);
+      uint64_t __tss_entry = 0x0080890000000067ULL;
+      __tss_entry |= ((tssp) << 16) & 0x000000ffffff0000ULL;
+      __tss_entry |= ((tssp) << 32) & 0xff00000000000000ULL;
+      gdt[GDT_TSS_BASE + i] = __tss_entry;
+   }
+   
+   /* Create the SYSTEM task-state segment. */
+   tss[SYSTEM].esp0 = (uintptr_t)kstktop;
+   tss[SYSTEM].ss0  = GDT_SELECTOR(2, RING0);
+   tss[SYSTEM].cr3  = memory_get_cr3();
+   tss[SYSTEM].eip  = system_driver_info.entry_point;
+   tss[SYSTEM].esp  = system_driver_info.stack;
+   tss[SYSTEM].cs   = GDT_SELECTOR(1, RING0);
+   tss[SYSTEM].ss   = GDT_SELECTOR(2, RING0);
+   tss[SYSTEM].ds   = GDT_SELECTOR(2, RING0);
+   /* All unset fields are 0 */
+   
+   /* Load a temporary, garbage task and switch to the system task */
+   __asm__ __volatile__ ("ltr %0" : : "R" PROCESS_TSS(GARBAGE, RING0));
+   process_switch(SYSTEM, RING0);
+   Panic("%s", "Why am I here?");
+}

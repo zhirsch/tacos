@@ -1,0 +1,53 @@
+# -*- mode: python -*-
+Import('env')
+
+# Set up the SCons environment
+env.Replace(
+    CFLAGS    = ['-Wall',
+                 '-Wextra',
+                 '-Werror',
+                 '-Wno-unused-parameter',
+                 '-nostdinc',
+                 '-fno-builtin',
+                 '-iwithprefix', 'include',
+                 '-std=c99',
+                 '-pedantic',
+                 '-gstabs+',
+                 '-g3',
+                 '-O0',
+                 '-m32',
+                 '-fno-stack-protector',
+    ],
+    ASFLAGS   = ['-gstabs+',
+                 '-g3',
+                 '-O0',
+                 '-m32',
+    ],
+    LINKFLAGS = ['-nodefaultlibs',
+                 '-nostartfiles',
+                 '-nostdlib',
+                 '-T$LINKER_SCRIPT',
+                 '-m32',
+                 '-Wl,--fatal-warnings',
+    ],
+    CPPPATH   = ['#bld/include',
+    ],
+    LINKER_SCRIPT = env.File('ld/link.ld'),
+)
+
+# Ask each subdirectory to build itself and return the object files
+objects = env.SConscript(
+    ['kernel/SConscript',
+     'drivers/SConscript',
+     'libs/SConscript',
+     'arch/i386/SConscript',
+    ],
+    exports=['env'],
+)
+
+# Building the kernel depends on the linker script existing
+env.Depends('tacos', '$LINKER_SCRIPT')
+
+# Link all the object files together to create the kernel
+program = env.Program(target='tacos', source=objects)
+env.Alias('tacos', program)
