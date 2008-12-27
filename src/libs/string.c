@@ -36,15 +36,17 @@ void *memmove(void *dest, const void *src, size_t n)
 
 void *memset(void *s, int c, size_t n)
 {
+   uint8_t *u8 = s;
    for (size_t i = 0; i < n; i++)
-      ((uint8_t *)s)[i] = c;
+      u8[i] = c;
    return s;
 }
 
 void *memsetw(void *s, int c, size_t n)
 {
+   uint16_t *u16 = s;
    for (size_t i = 0; i < n; i++)
-      ((uint16_t *)s)[i] = c;
+      u16[i] = c;
    return s;
 }
 
