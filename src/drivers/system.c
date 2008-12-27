@@ -44,14 +44,13 @@ static void system_run(void)
    system_announce();
 
 //   system_load_driver(&mmu_driver_info, MMU, RING0);
-//   system_load_driver(&hello_driver_info, HELLO, RING0);
-//   system_load_driver(&world_driver_info, WORLD, RING0);
-//   system_load_driver(&sleeper_driver_info, SLEEPER, RING0);
+   system_load_driver(&hello_driver_info, HELLO, RING0);
+   system_load_driver(&world_driver_info, WORLD, RING0);
+   system_load_driver(&sleeper_driver_info, SLEEPER, RING0);
 
-//   __asm__ __volatile__ ("sti");
    while (1) {
       InfoMsg("In system process.");
-//      process_switch(HELLO, RING0);
+      process_switch(HELLO, RING0);
       sleep(3);
    }
 }

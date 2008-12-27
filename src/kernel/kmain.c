@@ -6,14 +6,11 @@
 #include <tacos/kernel.h>
 #include <tacos/types.h>
 #include <tacos/panic.h>
-#include <tacos/cpuid.h>
 #include <tacos/process.h>
 #include <tacos/segments.h>
 #include <tacos/screen.h>
 #include <tacos/kprintf.h>
 #include <tacos/interrupts.h>
-
-#include <lib/datetime.h>
 
 #include <drivers/system.h>
 
@@ -68,6 +65,9 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
    tss[SYSTEM].cs     = GDT_SELECTOR(1, RING0);
    tss[SYSTEM].ss     = GDT_SELECTOR(2, RING0);
    tss[SYSTEM].ds     = GDT_SELECTOR(2, RING0);
+   tss[SYSTEM].es     = GDT_SELECTOR(2, RING0);
+   tss[SYSTEM].fs     = GDT_SELECTOR(2, RING0);
+   tss[SYSTEM].gs     = GDT_SELECTOR(2, RING0);
    /* All unset fields are 0 */
 
    /* Populate the interrupt handlers */
@@ -89,7 +89,7 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
 
    /* Load a temporary, garbage task and switch to the system task */
    __asm__ __volatile__ ("ltr %0" : : "R" PROCESS_TSS(GARBAGE, RING0));
-   
+
    process_switch(SYSTEM, RING0);
    Panic("%s", "Why am I here?");
 }
