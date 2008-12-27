@@ -1,5 +1,6 @@
 #define ASM
 #include <asm/process.h>
+#include <asm/interrupt.h>
 
 /* --------------------------- tss ----------------------------------------- */
         .data
@@ -11,7 +12,7 @@ tss:
         .skip   NUM_PROCESSES * 104, 0
         .skip   NUM_INTERRUPTS * 104, 0
 tssend:
-	
-#if defined(__linux__) && defined(__ELF__)
-	.section .note.GNU-stack,"",%progbits
-#endif
+
+/* Add the .note.GNU-stack section (to tell ld that this object file doesn't
+   need an executable stack. */
+//	.section .note.GNU-stack,"",%progbits

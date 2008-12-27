@@ -105,6 +105,6 @@ kernel_pagedir:
         /* Fill in the rest of the page directory */
         .skip   (1024 - KERNEL_PAGE_NUMBER - 1) * 4, 0
 
-#if defined(__linux__) && defined(__ELF__)
+/* Add the .note.GNU-stack section (to tell ld that this object file doesn't
+   need an executable stack. */
 	.section .note.GNU-stack,"",%progbits
-#endif

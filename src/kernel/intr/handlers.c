@@ -1,7 +1,8 @@
+#include <tacos/interrupt.h>
+#include <tacos/task.h>
+#include <tacos/gdt.h>
 #include <tacos/panic.h>
-#include <tacos/interrupts.h>
 #include <tacos/kprintf.h>
-#include <tacos/segments.h>
 
 typedef struct __attribute__ ((__packed__))
 {
@@ -15,92 +16,72 @@ typedef struct __attribute__ ((__packed__))
    uint32_t eax;
 } regs_t;
 
-static void print_regs(tss_entry_t tss)
+static void _PrintPreviousTaskState(void)
 {
-   kprintf("edi = 0x%08x\n", tss.edi);
-   kprintf("esi = 0x%08x\n", tss.esi);
-   kprintf("ebp = 0x%08x\n", tss.ebp);
-   kprintf("esp = 0x%08x\n", tss.esp);
-   kprintf("ebx = 0x%08x\n", tss.ebx);
-   kprintf("edx = 0x%08x\n", tss.edx);
-   kprintf("ecx = 0x%08x\n", tss.ecx);
-   kprintf("eax = 0x%08x\n", tss.eax);
-}
-
-static void print_state(regs_t regs, uint32_t errorcode, uint32_t eip, uint32_t cs, uint32_t eflags)
-{
-   /* Get the interrupted TSS */
-   tss_entry_t interrupted_tss = tss_get_previous();
-
-   print_regs(interrupted_tss);
-   kprintf("errorcode = 0x%08x\n", errorcode);
-   kprintf("eip = 0x%08x\n", interrupted_tss.eip);
-   kprintf("cs = 0x%04x\n", interrupted_tss.cs);
-   kprintf("ss = 0x%04x\n", interrupted_tss.ss);
-   kprintf("ds = 0x%04x\n", interrupted_tss.ds);
-   kprintf("es = 0x%04x\n", interrupted_tss.es);
-   kprintf("fs = 0x%04x\n", interrupted_tss.fs);
-   kprintf("gs = 0x%04x\n", interrupted_tss.gs);
-   kprintf("eflags = 0x%08x\n", interrupted_tss.eflags);
+   Task_PrintState(Task_GetPreviousTask(1));
 }
 
 void intr_divide_error(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "DE");
 }
 
 void intr_breakpoint(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "BP");
 }
 
 void intr_overflow(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "OF");
 }
 
 void intr_bound_range(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "BR");
 }
 
 void intr_undefined_opcode(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "UD");
 }
 
 void intr_no_math(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "NM");
 }
 
 void intr_double_fault(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, errcode, eip, cs, eflags);
+   _PrintPreviousTaskState();
+   kprintf("errcode: 0x%08x\n", errcode);
    Panic("%s", "DF");
 }
 
 void intr_invalid_tss(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, errcode, eip, cs, eflags);
+   _PrintPreviousTaskState();
+   kprintf("errcode: 0x%08x\n", errcode);
    Panic("%s", "TS");
 }
 
 void intr_segment_not_present(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, errcode, eip, cs, eflags);
+   _PrintPreviousTaskState();
+   kprintf("errcode: 0x%08x\n", errcode);
    Panic("%s", "SS");
 }
 
 void intr_general_protection(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, errcode, eip, cs, eflags);
+   _PrintPreviousTaskState();
+   kprintf("errcode: 0x%08x\n", errcode);
    Panic("%s", "GP");
 }
 
@@ -108,31 +89,32 @@ void intr_page_fault(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, u
 {
    uint32_t cr2;
 
-   print_state(regs, errcode, eip, cs, eflags);
+   _PrintPreviousTaskState();
+   kprintf("errcode: 0x%08x\n", errcode);
    __asm__ __volatile__ ("mov %%cr2, %0" : "=r" (cr2));
    Panic("PF, cr2 = 0x%08x\n", cr2);
 }
 
 void intr_math_fault(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "MF");
 }
 
 void intr_alignment_check(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "AC");
 }
 
 void intr_machine_check(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "MC");
 }
 
 void intr_simd_exception(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
-   print_state(regs, 0, eip, cs, eflags);
+   _PrintPreviousTaskState();
    Panic("%s", "XF");
 }

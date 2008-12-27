@@ -3,28 +3,40 @@
  *****************************************************************************/
 
 #include <tacos/process.h>
-#include <tacos/types.h>
-#include <tacos/segments.h>
+#include <tacos/task.h>
 #include <tacos/panic.h>
 
-extern tss_entry_t tss[];
-
 /*****************************************************************************
- * process_switch
- *   Switch to the task identified by the given PID.
+ * Process_Switch
+ *   Switch to the process identified by the given PID.
+ *
+ * XXX: What does dpl do?
  *****************************************************************************/
-void process_switch(pid_t pid, uint8_t dpl)
+void Process_Switch(pid_t pid, uint8_t dpl)
 {
-   Assert(pid < NUM_PROCESSES, "Attempted to jump to an invalid process: %d", pid);
+   task_state_t *state;
+   unsigned int sel[2];
+
+   Assert(pid < NUM_PROCESSES, "Attempted to switch to an invalid process: %d",
+	  pid);
    Assert(dpl <= 3, "Attemped to use an invalid DPL: %d", dpl);
 
-   unsigned int sel[2];
+   /* Create the selector to jump to. */
    sel[0] = 0x0;
-   sel[1] = PROCESS_TSS(pid, dpl);
+   sel[1] = PROCESS_CreateSelector(pid, dpl);
 
+   /* Get the state of the process that's about to be switched to, so that some
+      diagnostic information can be printed. */
+   state = TASK_GetProcessTaskState(pid);
    Info("Jumping to process %d/%d", pid, dpl);
-   Info(" cr3=%08x, eip=%08x, esp=%08x", tss[pid].cr3, tss[pid].eip, tss[pid].esp);
-   Info(" cs=%x, ds=%x, ss=%x", tss[pid].cs, tss[pid].ds, tss[pid].ss);
+   Info(" cr3=%08x, eip=%08x, esp=%08x", state->cr3, state->eip, state->esp);
+   Info(" cs=%x, ds=%x, ss=%x", state->cs, state->ds, state->ss);
+
+   /* Switch to the new process. */
    __asm__ __volatile__ ("ljmp *(%0)" : : "p" (sel));
+
+   /* When the current process is returned to, print out a diagnostic
+      message. */
    Info("Returning from process: %d/%d", pid, dpl);
 }
+

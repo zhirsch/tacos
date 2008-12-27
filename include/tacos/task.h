@@ -1,25 +1,16 @@
 /*****************************************************************************
- * segments.h
+ * task.h
  *****************************************************************************/
 
-#ifndef SEGMENTS_H
-#define SEGMENTS_H
+#ifndef TASK_H
+#define TASK_H
 
-#include <asm/segments.h>
 #include <tacos/types.h>
 
-/* Converts an index and privilege level into a selector into the GDT. */
-#define GDT_SELECTOR(x, pl) ((uint16_t)(((x) << 3) | (0 << 2) | ((pl) << 0)))
+/* A selector for an entry into the GDT that identifies a task. */
+typedef uint16_t task_selector_t;
 
-/* Insert a process TSS into the GDT. */
-void gdt_insert_process(uint16_t pid, uint64_t entry);
-
-/* Insert an interrupt TSS into the GDT. */
-void gdt_insert_interrupt(uint16_t intr, uint64_t entry);
-
-/* Create a TSS entry, suitable for insertion into the GDT. */
-uint64_t gdt_create_tss_entry(uintptr_t base);
-
+/* A task-state segment. */
 typedef struct __attribute__ ((packed))
 {
    unsigned int prev_task_link : 16;
@@ -73,9 +64,66 @@ typedef struct __attribute__ ((packed))
    unsigned int debug_trap     : 1;
    unsigned int reserved12     : 15;
    unsigned int io_map_base    : 16;
-} tss_entry_t;
+} task_state_t;
 
-tss_entry_t tss_get_current(void);
-tss_entry_t tss_get_previous(void);
+/**
+ * Task_SetTaskRegister
+ *
+ * Loads the task-state register with a selector.
+ */
+static INLINE
+void Task_SetTaskRegister(task_selector_t selector)
+{
+   __asm__ __volatile__ ("ltr %0" : : "R" (selector));
+}
+
+/**
+ * Task_GetTaskRegister
+ *
+ * Gets the current value of the task-state regsiter.
+ *
+ * XXX: Create a typedef for a task-state selector.
+ */
+static INLINE
+task_selector_t Task_GetTaskRegister(void)
+{
+   task_selector_t selector;
+   __asm__ __volatile__ ("str %0" : "=R" (selector));
+   return selector;
+}
+
+/**
+ * Task_GetCurrentTask
+ *
+ * Get the task-state segment of the currently-executing task.
+ */
+extern task_state_t *Task_GetCurrentTask(void);
+
+/**
+ * Task_GetPreviousTask
+ *
+ * Get the task-state segment of the previous task LEVEL down the stack.
+ */
+extern task_state_t *Task_GetPreviousTask(unsigned int level);
+
+/**
+ * Task_GetTaskState
+ *
+ * Get a specific task's state.
+ */
+extern task_state_t *Task_GetTaskState(unsigned int index);
+
+/* Get a specific processes's state. */
+#define TASK_GetProcessTaskState(pid) Task_GetTaskState((pid))
+/* Get a specific interrupt's state. */
+#define TASK_GetInterruptTaskState(intr) \
+   Task_GetTaskState(NUM_PROCESSES + (intr))
+
+/**
+ * Task_PrintState
+ *
+ * Print the current state of a task-state segment.
+ */
+extern void Task_PrintState(task_state_t *state);
 
 #endif /* SEGMENTS_H */
