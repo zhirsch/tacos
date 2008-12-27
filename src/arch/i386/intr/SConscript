@@ -1,8 +1,7 @@
 # -*- mode: python -*-
-
 Import('env')
 
 objects = []
-objects += env.Object('handlers.c')
+objects += env.StaticObject('stubs.S')
 
 Return('objects')

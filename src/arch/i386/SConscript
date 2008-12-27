@@ -3,6 +3,7 @@ Import(['env', 'objects'])
 
 # Build the i386-specific files.
 objects += env.SConscript('boot/SConscript', exports=['env'])
+objects += env.SConscript('intr/SConscript', exports=['env'])
 objects += env.StaticObject('rtc.S')
 
 # Modify the SCons environment for linking an i386 kernel.
