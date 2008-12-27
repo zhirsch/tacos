@@ -1,5 +1,5 @@
 #define ASM
-#include <asm/interrupts.h>
+#include <asm/interrupt.h>
 
 /* --------------------------- idt ----------------------------------------- */
         .data
@@ -13,6 +13,6 @@ idtp:
         .word   idtp - idt - 1
         .long   idt
 
-#if defined(__linux__) && defined(__ELF__)
+/* Add the .note.GNU-stack section (to tell ld that this object file doesn't
+   need an executable stack. */
 	.section .note.GNU-stack,"",%progbits
-#endif

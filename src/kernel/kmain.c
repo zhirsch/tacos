@@ -7,10 +7,10 @@
 #include <tacos/types.h>
 #include <tacos/panic.h>
 #include <tacos/process.h>
-#include <tacos/segments.h>
+#include <tacos/task.h>
+#include <tacos/gdt.h>
+#include <tacos/interrupt.h>
 #include <tacos/screen.h>
-#include <tacos/kprintf.h>
-#include <tacos/interrupts.h>
 
 #include <drivers/system.h>
 
@@ -20,9 +20,7 @@
 version_t kversion = { .major = 0, .minor = 1, .tiny = 1 };
 
 /* Declare some universal data structures. These are defined in boot/boot.S */
-extern uint8_t kernel_pagedir[];
 extern uint8_t kstktop[];
-extern tss_entry_t tss[];
 
 /*****************************************************************************
  * kmain
@@ -30,9 +28,13 @@ extern tss_entry_t tss[];
  *****************************************************************************/
 void kmain(uint32_t magic, multiboot_info_t *mbi)
 {
+   task_state_t *state;
+
    /* Make sure the magic number is correct  */
    Assert(magic == MULTIBOOT_BOOTLOADER_MAGIC,
       "Wrong magic number passed to kmain: 0x%x\n", magic);
+
+   clearscreen();
 
    /* By the time execution reaches here, the following has occurred:
     *   -- Paging is enabled.
@@ -46,50 +48,52 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
     *   -- Space has been allocated in the IDT for 256 entries.
     */
 
-   clearscreen();
-
    /* Fill in the GDT with segments for each process. */
    for (int i = 0; i < NUM_PROCESSES; i++)
    {
-      uint64_t entry = gdt_create_tss_entry((uintptr_t)(tss + i));
-      gdt_insert_process(i, entry);
+      gdt_task_entry_t entry;
+
+      state = TASK_GetProcessTaskState(i);
+      entry = Gdt_CreateTaskEntry(state);
+      GDT_InsertProcess(i, entry);
    }
 
    /* Create the SYSTEM task-state segment. */
-   tss[SYSTEM].esp0   = (uintptr_t)kstktop;
-   tss[SYSTEM].ss0    = GDT_SELECTOR(2, RING0);
-   tss[SYSTEM].cr3    = memory_get_cr3();
-   tss[SYSTEM].eip    = system_driver_info.entry_point;
-   tss[SYSTEM].eflags = 0x0012;
-   tss[SYSTEM].esp    = system_driver_info.stack;
-   tss[SYSTEM].cs     = GDT_SELECTOR(1, RING0);
-   tss[SYSTEM].ss     = GDT_SELECTOR(2, RING0);
-   tss[SYSTEM].ds     = GDT_SELECTOR(2, RING0);
-   tss[SYSTEM].es     = GDT_SELECTOR(2, RING0);
-   tss[SYSTEM].fs     = GDT_SELECTOR(2, RING0);
-   tss[SYSTEM].gs     = GDT_SELECTOR(2, RING0);
-   /* All unset fields are 0 */
+   state = TASK_GetProcessTaskState(SYSTEM);
+   state->esp0   = (uintptr_t)kstktop;
+   state->ss0    = GDT_CreateSelector(2, RING0);
+   state->cr3    = memory_get_cr3();
+   state->eip    = (uintptr_t)system_driver_info.entry_point_func;
+   state->eflags = 0x0012;
+   state->esp    = (uintptr_t)system_driver_info.stack;
+   state->cs     = GDT_CreateSelector(1, RING0);
+   state->ss     = GDT_CreateSelector(2, RING0);
+   state->ds     = GDT_CreateSelector(2, RING0);
+   state->es     = GDT_CreateSelector(2, RING0);
+   state->fs     = GDT_CreateSelector(2, RING0);
+   state->gs     = GDT_CreateSelector(2, RING0);
 
    /* Populate the interrupt handlers */
-   prepare_interrupt_handler(INTR_DE, intr_divide_error_stub);
-   prepare_interrupt_handler(INTR_BP, intr_breakpoint_stub);
-   prepare_interrupt_handler(INTR_OF, intr_overflow_stub);
-   prepare_interrupt_handler(INTR_BR, intr_bound_range_stub);
-   prepare_interrupt_handler(INTR_UD, intr_undefined_opcode_stub);
-   prepare_interrupt_handler(INTR_NM, intr_no_math_stub);
-   prepare_interrupt_handler(INTR_DF, intr_double_fault_stub);
-   prepare_interrupt_handler(INTR_TS, intr_invalid_tss_stub);
-   prepare_interrupt_handler(INTR_NP, intr_segment_not_present_stub);
-   prepare_interrupt_handler(INTR_GP, intr_general_protection_stub);
-   prepare_interrupt_handler(INTR_PF, intr_page_fault_stub);
-   prepare_interrupt_handler(INTR_MF, intr_math_fault_stub);
-   prepare_interrupt_handler(INTR_AC, intr_alignment_check_stub);
-   prepare_interrupt_handler(INTR_MC, intr_machine_check_stub);
-   prepare_interrupt_handler(INTR_XF, intr_simd_exception_stub);
+   Interrupt_AssignNewHandler(INTR_DE, intr_divide_error_stub);
+   Interrupt_AssignNewHandler(INTR_BP, intr_breakpoint_stub);
+   Interrupt_AssignNewHandler(INTR_OF, intr_overflow_stub);
+   Interrupt_AssignNewHandler(INTR_BR, intr_bound_range_stub);
+   Interrupt_AssignNewHandler(INTR_UD, intr_undefined_opcode_stub);
+   Interrupt_AssignNewHandler(INTR_NM, intr_no_math_stub);
+   Interrupt_AssignNewHandler(INTR_DF, intr_double_fault_stub);
+   Interrupt_AssignNewHandler(INTR_TS, intr_invalid_tss_stub);
+   Interrupt_AssignNewHandler(INTR_NP, intr_segment_not_present_stub);
+   Interrupt_AssignNewHandler(INTR_GP, intr_general_protection_stub);
+   Interrupt_AssignNewHandler(INTR_PF, intr_page_fault_stub);
+   Interrupt_AssignNewHandler(INTR_MF, intr_math_fault_stub);
+   Interrupt_AssignNewHandler(INTR_AC, intr_alignment_check_stub);
+   Interrupt_AssignNewHandler(INTR_MC, intr_machine_check_stub);
+   Interrupt_AssignNewHandler(INTR_XF, intr_simd_exception_stub);
 
    /* Load a temporary, garbage task and switch to the system task */
-   __asm__ __volatile__ ("ltr %0" : : "R" PROCESS_TSS(GARBAGE, RING0));
+   Task_SetTaskRegister(PROCESS_CreateSelector(GARBAGE, RING0));
+   Process_Switch(SYSTEM, RING0);
 
-   process_switch(SYSTEM, RING0);
+   /* The system task should never terminate. */
    Panic("%s", "Why am I here?");
 }

@@ -8,21 +8,18 @@
 
 #include <asm/process.h>
 #include <tacos/types.h>
+#include <tacos/gdt.h>
+
+/* Gets the GDT selector for a process's task segment. */
+#define PROCESS_CreateSelector(x, y) \
+   GDT_CreateSelector(GDT_TASK_BASE + (x), (y))
 
 /*****************************************************************************
- * process_switch
+ * Process_Switch
  *   Switch to the process identified by the given PID.
+ *
+ * XXX: What does dpl do?
  *****************************************************************************/
-extern void process_switch(pid_t pid, uint8_t dpl);
-
-/*****************************************************************************
- * process_ltr
- *   Loads the task-state register with a selector for a process.
- *****************************************************************************/
-static INLINE
-void process_ltr(uint16_t selector)
-{
-   __asm__ __volatile__ ("ltr %0" : : "R" (selector));
-}
+extern void Process_Switch(pid_t pid, uint8_t dpl);
 
 #endif /* PROCESS_H */

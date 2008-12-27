@@ -5,13 +5,24 @@
 #ifndef TACOS_INTERRUPTS_H
 #define TACOS_INTERRUPTS_H
 
-#include <asm/interrupts.h>
+#include <asm/interrupt.h>
 #include <tacos/types.h>
 
-typedef void (*intr_handler_t)(void);
+/* Create a selector into the GDT for an interrupt's task. */
+#define INTERRUPT_CreateSelector(x, y) \
+   GDT_CreateSelector(GDT_TASK_BASE + NUM_PROCESSES + (x), (y))
 
-extern void prepare_interrupt_handler(uint8_t intr, intr_handler_t handler);
+typedef void (*interrupt_handler_t)(void);
 
+/*****************************************************************************
+ * Interrupt_AssignNewHandler
+ *   Assign a new handler for a specific interrupt. Any existing handler for
+ *   the interrupt is removed.
+ *****************************************************************************/
+extern void Interrupt_AssignNewHandler(uint8_t intr, interrupt_handler_t hdlr);
+
+/* Stubs for handling interrupts. */
+/* XXX: These should be moved elsewhere. */
 extern void intr_divide_error_stub(void);
 extern void intr_breakpoint_stub(void);
 extern void intr_overflow_stub(void);

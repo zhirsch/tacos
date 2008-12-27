@@ -32,12 +32,16 @@ static int bcd2bin(int x)
  *****************************************************************************/
 void sleep(int nsecs)
 {
+   int cursecs;
+   int end;
+   int last;
+
    Assert(nsecs < 60, "%s", "Can't sleep for that long!");
 
-   int cursecs = bcd2bin(getsecond());
-   int end = (cursecs + nsecs) % 60;
+   cursecs = bcd2bin(getsecond());
+   end = (cursecs + nsecs) % 60;
 
-   int last = cursecs;
+   last = cursecs;
 
    while (cursecs != end) {
       if (cursecs != last) {

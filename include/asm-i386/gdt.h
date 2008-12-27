@@ -8,4 +8,4 @@
 #define RING3 3
 
 /* The index of the first TSS in the GDT. */
-#define GDT_TSS_BASE 5
+#define GDT_TASK_BASE 5

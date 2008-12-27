@@ -15,25 +15,23 @@
 #include <tacos/cpuid.h>
 #include <tacos/kprintf.h>
 #include <tacos/process.h>
-#include <tacos/segments.h>
+#include <tacos/gdt.h>
 
 #include <lib/datetime.h>
-
-extern int gethour(void);
 
 static uint8_t system_stack[1024];
 static void system_run(void);
 static void system_announce(void);
-static void system_load_driver(driver_info_t *driverinfo, pid_t pid, int pl) __attribute__ ((used));
+static void system_load_driver(driver_info_t *driverinfo, pid_t pid, int pl);
 
 extern uint8_t kstktop[];
-extern tss_entry_t tss[];
 
 driver_info_t system_driver_info = {
-   .name        = "system",
-   .version     = { .major = 0, .minor = 0, .tiny = 1 },
-   .entry_point = (uintptr_t)system_run,
-   .stack       = (uintptr_t)(system_stack + sizeof(system_stack)),
+   .name             = "system",
+   .version          = { .major = 0, .minor = 0, .tiny = 1 },
+   .entry_point_func = system_run,
+   .init_func        = NULL,
+   .stack            = system_stack + sizeof(system_stack),
 };
 
 /*****************************************************************************
@@ -50,7 +48,7 @@ static void system_run(void)
 
    while (1) {
       InfoMsg("In system process.");
-      process_switch(HELLO, RING0);
+      Process_Switch(HELLO, RING0);
       sleep(3);
    }
 }
@@ -80,20 +78,23 @@ static void system_announce(void)
  *****************************************************************************/
 static void system_load_driver(driver_info_t *driverinfo, pid_t pid, int pl)
 {
-   tss[pid].esp0 = (uintptr_t)kstktop;
-   tss[pid].ss0  = GDT_SELECTOR(2, RING0);
+   task_state_t *state = TASK_GetProcessTaskState(pid);
 
-   tss[pid].cr3  = memory_get_cr3();
+   state->esp0 = (uintptr_t)kstktop;
+   state->ss0  = GDT_CreateSelector(2, RING0);
+   state->cr3  = memory_get_cr3();
+   state->eip  = (uintptr_t)driverinfo->entry_point_func;
+   state->esp  = (uintptr_t)driverinfo->stack;
+   state->cs   = GDT_CreateSelector(1, pl);
+   state->ss   = GDT_CreateSelector(2, pl);
+   state->ds   = GDT_CreateSelector(2, pl);
+   state->es   = GDT_CreateSelector(2, pl);
+   state->fs   = GDT_CreateSelector(2, pl);
+   state->gs   = GDT_CreateSelector(2, pl);
 
-   tss[pid].eip  = driverinfo->entry_point;
-   tss[pid].esp  = driverinfo->stack;
-
-   tss[pid].cs   = GDT_SELECTOR(1, pl);
-   tss[pid].ss   = GDT_SELECTOR(2, pl);
-   tss[pid].ds   = GDT_SELECTOR(2, pl);
-
-   /* All unset fields are 0 */
-
-   Info("Loaded %s driver, version %d.%d.%d", driverinfo->name,
-      driverinfo->version.major, driverinfo->version.minor, driverinfo->version.tiny);
+   Info("Loaded %s driver, version %d.%d.%d",
+	driverinfo->name,
+	driverinfo->version.major,
+	driverinfo->version.minor,
+	driverinfo->version.tiny);
 }

@@ -3,10 +3,10 @@
 
 #include <asm/process.h>
 
+/* The number of interrupts that are accounted for. */
 #define NUM_INTERRUPTS 32
 
-#define INTERRUPT_TSS(x, y) GDT_SELECTOR(GDT_TSS_BASE + NUM_PROCESSES + (x), (y))
-
+/* Convinient names for common interrupts. */
 #define INTR_DE 0
 #define INTR_BP 3
 #define INTR_OF 4

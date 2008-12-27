@@ -1,5 +1,6 @@
 #define ASM
 #include <asm/process.h>
+#include <asm/interrupt.h>
 
 /* --------------------------- gdt ----------------------------------------- */
         .data
@@ -29,6 +30,6 @@ gdtp:
         .word   gdtp - gdt - 1
         .long   gdt
 
-#if defined(__linux__) && defined(__ELF__)
+/* Add the .note.GNU-stack section (to tell ld that this object file doesn't
+   need an executable stack. */
 	.section .note.GNU-stack,"",%progbits
-#endif
