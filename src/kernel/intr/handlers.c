@@ -36,6 +36,11 @@ static void print_state(regs_t regs, uint32_t errorcode, uint32_t eip, uint32_t 
    kprintf("errorcode = 0x%08x\n", errorcode);
    kprintf("eip = 0x%08x\n", interrupted_tss.eip);
    kprintf("cs = 0x%04x\n", interrupted_tss.cs);
+   kprintf("ss = 0x%04x\n", interrupted_tss.ss);
+   kprintf("ds = 0x%04x\n", interrupted_tss.ds);
+   kprintf("es = 0x%04x\n", interrupted_tss.es);
+   kprintf("fs = 0x%04x\n", interrupted_tss.fs);
+   kprintf("gs = 0x%04x\n", interrupted_tss.gs);
    kprintf("eflags = 0x%08x\n", interrupted_tss.eflags);
 }
 
