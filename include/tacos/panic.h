@@ -34,4 +34,6 @@ extern void _Panic(const char *file, uint32_t line, const char *format, ...)
       }								\
    })
 
+#define NOT_IMPLEMENTED(msg) Panic("NOT_IMPLEMENTED: %s", msg)
+
 #endif /* PANIC_H */

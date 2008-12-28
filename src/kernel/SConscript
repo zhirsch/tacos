@@ -12,6 +12,7 @@ objects += env.Object('screen.c')
 objects += env.Object('gdt.c')
 objects += env.Object('interrupt.c')
 objects += env.Object('task.c')
+objects += env.Object('driver.c')
 objects += env.SConscript('intr/SConscript', exports=['env'])
 
 Return('objects')

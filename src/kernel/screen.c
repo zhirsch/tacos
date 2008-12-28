@@ -26,12 +26,10 @@ static struct { int x, y; } cursor = { 0, 0 };
  *****************************************************************************/
 static void scroll(void)
 {
-   unsigned short blank;
-
    if (cursor.y >= MAXLINES)
    {
       /* A blank is a space -- use the current attributes */
-      blank = ' ' | (attrib << 8);
+      unsigned short blank = ' ' | (attrib << 8);
 
       /* Move line 1 through MAXLINES up one line */
       memcpy(VGAMEMBASE, VGAMEMBASE + MAXCOLS, (MAXLINES - 1) * MAXCOLS * 2);
@@ -61,10 +59,11 @@ static void show_hardware_cursor(void)
 #endif
 }
 
-/*****************************************************************************
- * cls --
- *   Clear the screen.
- *****************************************************************************/
+/**
+ * clearscreen
+ *
+ * Clear the screen.
+ */
 void clearscreen(void)
 {
    unsigned int blank;
@@ -80,10 +79,11 @@ void clearscreen(void)
    show_hardware_cursor();
 }
 
-/*****************************************************************************
- * putch --
- *   Puts a character onto the screen at the current cursor position.
- *****************************************************************************/
+/**
+ * putch
+ *
+ * Puts a character onto the screen at the current cursor position.
+ */
 void putch(unsigned char ch)
 {
    unsigned short *where;

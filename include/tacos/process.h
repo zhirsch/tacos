@@ -21,8 +21,7 @@ typedef void (*process_entry_point_t)(void);
  *
  * Create a new process.
  */
-extern pid_t Process_Create(process_entry_point_t entryfunc, uint8_t *stack,
-			    int mode);
+extern pid_t Process_Create(process_entry_point_t entryfunc, uint8_t *stack);
 
 /**
  * Process_Switch
@@ -32,5 +31,12 @@ extern pid_t Process_Create(process_entry_point_t entryfunc, uint8_t *stack,
  * XXX: What does dpl do?
  */
 extern void Process_Switch(pid_t pid, uint8_t dpl);
+
+/**
+ * Process_Yield
+ *
+ * Give up the rest of this processes CPU time.
+ */
+extern void Process_Yield(void);
 
 #endif /* PROCESS_H */

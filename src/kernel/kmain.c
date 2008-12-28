@@ -22,6 +22,11 @@ version_t kversion = { .major = 0, .minor = 1, .tiny = 1 };
 /* Declare some universal data structures. These are defined in boot/boot.S */
 extern uint8_t kstktop[];
 
+static INLINE void outb(unsigned short port, unsigned char val)
+{
+   __asm__ __volatile__ ("outb %0, %1" : : "a" (val), "Nd" (port));
+}
+
 /*****************************************************************************
  * kmain
  *   This is the big salami.
@@ -35,6 +40,10 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
       "Wrong magic number passed to kmain: 0x%x\n", magic);
 
    clearscreen();
+
+   /* Hide the hardware cursor. */
+   outb(0x3D4, 0x0A);
+   outb(0x3D5, 0x20);
 
    /* By the time execution reaches here, the following has occurred:
     *   -- Paging is enabled.
@@ -59,9 +68,8 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
       GDT_InsertProcess(i, entry);
    }
 
-   /* Create the SYSTEM drive process. */
-   system_driver_pid = Process_Create(system_driver_info.entry_point_func,
-				      system_driver_info.stack, 0);
+   /* Load the SYSTEM driver. */
+   system_driver_pid = Driver_Load(&system_driver_info);
    if (UNLIKELY(system_driver_pid < 0)) {
       Panic("Process_Create returned %d\n", system_driver_pid);
    }
