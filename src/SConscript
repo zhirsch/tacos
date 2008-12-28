@@ -2,7 +2,7 @@
 Import('env')
 
 # Create the SCons environment.
-env.Replace(
+env = env.Clone(
     CFLAGS    = ['-Wall',
                  '-Wextra',
                  '-Werror',
