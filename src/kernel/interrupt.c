@@ -2,6 +2,9 @@
 #include <tacos/interrupt.h>
 #include <tacos/task.h>
 #include <tacos/gdt.h>
+#include <tacos/memory.h>
+
+#include <lib/string.h>
 
 /* An entry in the IDT that describes an interrupt's task gate. */
 typedef struct __attribute__((__packed__))
@@ -40,7 +43,7 @@ void Interrupt_AssignNewHandler(uint8_t intr, interrupt_handler_t hldr)
    /* Create this interrupt's task in the TSS. */
    state->esp0   = (uintptr_t)kstktop;
    state->ss0    = GDT_CreateSelector(2, RING0);
-   state->cr3    = memory_get_cr3();
+   state->cr3    = Memory_GetPageTableBaseAddress();
    state->eip    = (uintptr_t)hldr;
    state->eflags = 0x0002;
    state->esp    = (uintptr_t)kstktop;
@@ -62,5 +65,5 @@ void Interrupt_AssignNewHandler(uint8_t intr, interrupt_handler_t hldr)
    gate.reserved4 = 0x0;
 
    /* Add the task gate to the IDT. */
-   idt[intr] = *((uint64_t *)&gate);
+   memcpy(idt + intr, &gate, sizeof(gate));
 }

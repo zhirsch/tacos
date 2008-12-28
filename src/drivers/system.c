@@ -16,13 +16,14 @@
 #include <tacos/kprintf.h>
 #include <tacos/process.h>
 #include <tacos/gdt.h>
+#include <tacos/memory.h>
 
 #include <lib/datetime.h>
 
 static uint8_t system_stack[1024];
 static void system_run(void);
 static void system_announce(void);
-static void system_load_driver(driver_info_t *driverinfo, pid_t pid, int pl);
+static pid_t system_load_driver(driver_info_t *driverinfo);
 
 extern uint8_t kstktop[];
 
@@ -39,16 +40,18 @@ driver_info_t system_driver_info = {
  *****************************************************************************/
 static void system_run(void)
 {
+   pid_t hello_pid;
+
    system_announce();
 
 //   system_load_driver(&mmu_driver_info, MMU, RING0);
-   system_load_driver(&hello_driver_info, HELLO, RING0);
-   system_load_driver(&world_driver_info, WORLD, RING0);
-   system_load_driver(&sleeper_driver_info, SLEEPER, RING0);
+   hello_pid = system_load_driver(&hello_driver_info);
+   //system_load_driver(&world_driver_info, WORLD, RING0);
+   //system_load_driver(&sleeper_driver_info, SLEEPER, RING0);
 
    while (1) {
-      InfoMsg("In system process.");
-      Process_Switch(HELLO, RING0);
+      Info0("In system process.");
+      //Process_Switch(HELLO, RING0);
       sleep(3);
    }
 }
@@ -76,25 +79,17 @@ static void system_announce(void)
 /*****************************************************************************
  * system_load_driver
  *****************************************************************************/
-static void system_load_driver(driver_info_t *driverinfo, pid_t pid, int pl)
+static pid_t system_load_driver(driver_info_t *driverinfo)
 {
-   task_state_t *state = TASK_GetProcessTaskState(pid);
+   pid_t pid = Process_Create(driverinfo->entry_point_func, driverinfo->stack,
+			      0);
 
-   state->esp0 = (uintptr_t)kstktop;
-   state->ss0  = GDT_CreateSelector(2, RING0);
-   state->cr3  = memory_get_cr3();
-   state->eip  = (uintptr_t)driverinfo->entry_point_func;
-   state->esp  = (uintptr_t)driverinfo->stack;
-   state->cs   = GDT_CreateSelector(1, pl);
-   state->ss   = GDT_CreateSelector(2, pl);
-   state->ds   = GDT_CreateSelector(2, pl);
-   state->es   = GDT_CreateSelector(2, pl);
-   state->fs   = GDT_CreateSelector(2, pl);
-   state->gs   = GDT_CreateSelector(2, pl);
-
-   Info("Loaded %s driver, version %d.%d.%d",
+   Info("Loaded %s driver, version %d.%d.%d (pid %d)",
 	driverinfo->name,
 	driverinfo->version.major,
 	driverinfo->version.minor,
-	driverinfo->version.tiny);
+	driverinfo->version.tiny,
+	pid);
+
+   return pid;
 }

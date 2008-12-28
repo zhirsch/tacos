@@ -27,7 +27,7 @@ static void hello_run(void)
    Info("Hello's stack starts near %x.", (uintptr_t)&a);
 
    while (1) {
-      InfoMsg("Hello");
+      Info0("Hello");
       Process_Switch(WORLD, RING0);
    }
 }

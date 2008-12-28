@@ -27,7 +27,7 @@ static void world_run(void)
    Info("World's stack starts near %x.", (uintptr_t)&a);
 
    while (1) {
-      InfoMsg("World");
+      Info0("World");
       Process_Switch(SLEEPER, RING0);
    }
 }

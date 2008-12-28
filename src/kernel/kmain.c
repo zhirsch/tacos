@@ -28,7 +28,7 @@ extern uint8_t kstktop[];
  *****************************************************************************/
 void kmain(uint32_t magic, multiboot_info_t *mbi)
 {
-   task_state_t *state;
+   pid_t system_driver_pid;
 
    /* Make sure the magic number is correct  */
    Assert(magic == MULTIBOOT_BOOTLOADER_MAGIC,
@@ -52,26 +52,19 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
    for (int i = 0; i < NUM_PROCESSES; i++)
    {
       gdt_task_entry_t entry;
+      task_state_t *state;
 
       state = TASK_GetProcessTaskState(i);
       entry = Gdt_CreateTaskEntry(state);
       GDT_InsertProcess(i, entry);
    }
 
-   /* Create the SYSTEM task-state segment. */
-   state = TASK_GetProcessTaskState(SYSTEM);
-   state->esp0   = (uintptr_t)kstktop;
-   state->ss0    = GDT_CreateSelector(2, RING0);
-   state->cr3    = memory_get_cr3();
-   state->eip    = (uintptr_t)system_driver_info.entry_point_func;
-   state->eflags = 0x0012;
-   state->esp    = (uintptr_t)system_driver_info.stack;
-   state->cs     = GDT_CreateSelector(1, RING0);
-   state->ss     = GDT_CreateSelector(2, RING0);
-   state->ds     = GDT_CreateSelector(2, RING0);
-   state->es     = GDT_CreateSelector(2, RING0);
-   state->fs     = GDT_CreateSelector(2, RING0);
-   state->gs     = GDT_CreateSelector(2, RING0);
+   /* Create the SYSTEM drive process. */
+   system_driver_pid = Process_Create(system_driver_info.entry_point_func,
+				      system_driver_info.stack, 0);
+   if (UNLIKELY(system_driver_pid < 0)) {
+      Panic("Process_Create returned %d\n", system_driver_pid);
+   }
 
    /* Populate the interrupt handlers */
    Interrupt_AssignNewHandler(INTR_DE, intr_divide_error_stub);
@@ -92,8 +85,8 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
 
    /* Load a temporary, garbage task and switch to the system task */
    Task_SetTaskRegister(PROCESS_CreateSelector(GARBAGE, RING0));
-   Process_Switch(SYSTEM, RING0);
+   Process_Switch(system_driver_pid, RING0);
 
    /* The system task should never terminate. */
-   Panic("%s", "Why am I here?");
+   Panic0("Why am I here?");
 }

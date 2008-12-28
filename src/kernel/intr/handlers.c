@@ -24,65 +24,65 @@ static void _PrintPreviousTaskState(void)
 void intr_divide_error(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "DE");
+   Panic0("DE");
 }
 
 void intr_breakpoint(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "BP");
+   Panic0("BP");
 }
 
 void intr_overflow(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "OF");
+   Panic0("OF");
 }
 
 void intr_bound_range(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "BR");
+   Panic0("BR");
 }
 
 void intr_undefined_opcode(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "UD");
+   Panic0("UD");
 }
 
 void intr_no_math(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "NM");
+   Panic0("NM");
 }
 
 void intr_double_fault(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
    kprintf("errcode: 0x%08x\n", errcode);
-   Panic("%s", "DF");
+   Panic0("DF");
 }
 
 void intr_invalid_tss(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
    kprintf("errcode: 0x%08x\n", errcode);
-   Panic("%s", "TS");
+   Panic0("TS");
 }
 
 void intr_segment_not_present(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
    kprintf("errcode: 0x%08x\n", errcode);
-   Panic("%s", "SS");
+   Panic0("SS");
 }
 
 void intr_general_protection(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
    kprintf("errcode: 0x%08x\n", errcode);
-   Panic("%s", "GP");
+   Panic0("GP");
 }
 
 void intr_page_fault(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, uint32_t eflags)
@@ -98,23 +98,23 @@ void intr_page_fault(regs_t regs, uint32_t errcode, uint32_t eip, uint32_t cs, u
 void intr_math_fault(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "MF");
+   Panic0("MF");
 }
 
 void intr_alignment_check(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "AC");
+   Panic0("AC");
 }
 
 void intr_machine_check(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "MC");
+   Panic0("MC");
 }
 
 void intr_simd_exception(regs_t regs, uint32_t eip, uint32_t cs, uint32_t eflags)
 {
    _PrintPreviousTaskState();
-   Panic("%s", "XF");
+   Panic0("XF");
 }
