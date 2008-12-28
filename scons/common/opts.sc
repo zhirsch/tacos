@@ -2,8 +2,8 @@
 
 opts = Variables('custom.py')
 opts.AddVariables(
-    BoolVariable('V', 'output the commands used to build', False),
-    ('O', 'the optimization level to use', 0),
+    BoolVariable('V', 'echo the build commands', False),
+    EnumVariable('T', 'the build variant type', 'debug', ['debug', 'release']),
 )
 
 Return('opts')
