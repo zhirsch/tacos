@@ -5,8 +5,5 @@ Import('env')
 objects = []
 objects += env.Object('mmu.c')
 objects += env.Object('system.c')
-objects += env.Object('hello.c')
-objects += env.Object('world.c')
-objects += env.Object('sleeper.c')
 
 Return('objects')
