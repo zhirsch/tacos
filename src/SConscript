@@ -16,12 +16,12 @@ env.Replace(
                  '-pedantic',
                  '-gstabs+',
                  '-g3',
-                 '-O%s' % env['O'],
+                 '-O0' if env['T'] == 'debug' else '-O2',
                  '-m32',
     ],
     ASFLAGS   = ['-gstabs+',
                  '-g3',
-                 '-O%s' % env['O'],
+                 '-O0' if env['T'] == 'debug' else '-O2',
                  '-m32',
     ],
     LINKFLAGS = ['-nodefaultlibs',
@@ -58,4 +58,4 @@ iso = env.MkIsoFs(
                   '-quiet',
     ],
 )
-env.Alias('tacos-iso', iso)
+Default(env.Alias('tacos-iso', iso))
