@@ -1,0 +1,12 @@
+# -*- mode: python -*-
+Import('env')
+
+objects = []
+objects += env.StaticObject('gdt.S')
+objects += env.StaticObject('idt.S')
+objects += env.StaticObject('tss.S')
+# Assemble boot.S, but don't add it to the objects list. The linker script
+# links it for us.
+env.StaticObject('boot.S')
+
+Return('objects')

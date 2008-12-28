@@ -1,0 +1,8 @@
+syntax: glob
+
+bld
+cscope.in.out
+cscope.out
+cscope.po.out
+.sconsign.dblite
+*~

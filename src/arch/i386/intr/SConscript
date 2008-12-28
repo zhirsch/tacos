@@ -1,0 +1,7 @@
+# -*- mode: python -*-
+Import('env')
+
+objects = []
+objects += env.StaticObject('stubs.S')
+
+Return('objects')

@@ -1,0 +1,12 @@
+default tacoOS (local)
+timeout 2
+
+title tacOS (local)
+  root (cd)
+  kernel /boot/tacos
+
+title tacOS (dhcp)
+  dhcp
+  tftpserver 192.168.200.1
+  kernel (nd)/tacos
+  boot
