@@ -7,5 +7,7 @@ env = SConscript('#scons/common/environ.sc', exports=['opts'])
 env.VariantDir('#bld/debug', '#src')
 env.VariantDir('#bld/release', '#src')
 
-# Build the tacos kernel for the specific variant
-env.SConscript('bld/$T/SConscript', exports={'env': env.Clone()})
+# Build the tacos kernel for each specified variant.
+for variant in env['T']:
+    env['T'] = variant
+    env.SConscript('bld/%s/SConscript' % variant, exports=['env'])

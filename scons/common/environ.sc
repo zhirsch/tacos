@@ -13,20 +13,16 @@ env.Append(CFLAGS=['-Wall',
                    ])
 
 # Create a builder for mkisofs
-mkisofs = SCons.Action.Action('$MKISOFSCOM', '$MKISOFSCOMSTR')
-builder = Builder(action=mkisofs,
-                  target_factory=env.fs.File,
-                  source_factory=env.fs.Dir)
-env.Append(BUILDERS={'MkIsoFs': builder})
+mkisofs_builder = Builder(action=Action('$MKISOFSCOM', '$MKISOFSCOMSTR'),
+                          source_factory=env.fs.Dir)
+env.Append(BUILDERS={'MkIsoFs': mkisofs_builder})
 env['MKISOFSCOM'] = 'mkisofs $MKISOFSFLAGS -o $TARGET $SOURCE'
 env['MKISOFSCOMSTR'] = '$MKISOFSCOM'
 
-# Create a builder for ln
-ln = SCons.Action.Action('$LNCOM', '$LNCOMSTR')
-builder = Builder(action=ln)
-env.Append(BUILDERS={'HardLink': ln})
-env['LNCOM'] = 'ln $SOURCE $TARGET'
-env['LNCOMSTR'] = '$LNCOM'
+# Create a builder for sed
+env.Append(BUILDERS={'Sed': Builder(action=Action('$SEDCOM', '$SEDCOMSTR'))})
+env['SEDCOM'] = 'sed -e"$PATTERN" < $SOURCE > $TARGET'
+env['SEDCOMSTR'] = '$SEDCOM'
 
 # Set the output patterns when verbose is disabled
 if not env['V']:
@@ -34,6 +30,7 @@ if not env['V']:
     env['LINKCOMSTR']    = '  LD                $TARGET'
     env['ASPPCOMSTR']    = '  ASPP              $TARGET'
     env['MKISOFSCOMSTR'] = '  MKISOFS           $TARGET'
+    env['SEDCOMSTR']     = '  SED               $TARGET'
     env['COPYSTR']       = '  COPY              $TARGET'
     SCons.Script.Copy.strfunc = lambda d, s: env.subst('$COPYSTR', 1, target=d)
 

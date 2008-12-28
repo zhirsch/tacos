@@ -1,6 +1,6 @@
 OUTPUT_FORMAT("elf32-i386")
 ENTRY("_start")
-STARTUP(bld/arch/i386/boot/boot.o);
+STARTUP(@@STARTUP@@);
 
 SECTIONS
 {
