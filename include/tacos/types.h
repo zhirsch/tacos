@@ -40,4 +40,12 @@ typedef int16_t pid_t;
 # define INLINE inline __attribute__ ((always_inline))
 #endif
 
+#ifndef LIKELY
+# define LIKELY(x) __builtin_expect(!!(x), 1)
+#endif
+
+#ifndef UNLIKELY
+# define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#endif
+
 #endif /* TYPES_H */

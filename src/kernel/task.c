@@ -25,6 +25,9 @@ task_state_t *Task_GetCurrentTask(void)
  */
 task_state_t *Task_GetPreviousTask(unsigned int level)
 {
+   /* This code is wrong. Jumping to a new task does not set the previous
+    * task link field in the TSS.
+    */
    gdt_task_entry_t *entry;
    task_selector_t selector;
    uintptr_t addr;

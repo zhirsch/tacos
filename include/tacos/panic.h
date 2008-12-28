@@ -12,7 +12,7 @@
  *   Print out a message.
  *****************************************************************************/
 #define Info(format, ...) _Info(__FILE__, __LINE__, format, ##__VA_ARGS__)
-#define InfoMsg(msg) Info("%s", msg)
+#define Info0(format) Info("%s", format);
 extern void _Info(const char *file, uint32_t line, const char *format, ...)
    __attribute__ ((format(printf, 3, 4)));
 
@@ -21,6 +21,7 @@ extern void _Info(const char *file, uint32_t line, const char *format, ...)
  *   Print out a message and halt the CPU.
  *****************************************************************************/
 #define Panic(format, ...) _Panic(__FILE__, __LINE__, format, ##__VA_ARGS__)
+#define Panic0(format) Panic("%s", format)
 extern void _Panic(const char *file, uint32_t line, const char *format, ...)
    __attribute__ ((noreturn, format(printf, 3, 4)));
 
