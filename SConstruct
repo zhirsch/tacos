@@ -3,9 +3,9 @@
 opts = SConscript('#scons/common/opts.sc')
 env = SConscript('#scons/common/environ.sc', exports=['opts'])
 
-# Build the tacos kernel
-env.VariantDir('#bld', '#src')
-exports = {
-    'env': env.Clone(),
-}
-env.SConscript('#bld/SConscript', exports=exports)
+# Enumerate the different build variants.
+env.VariantDir('#bld/debug', '#src')
+env.VariantDir('#bld/release', '#src')
+
+# Build the tacos kernel for the specific variant
+env.SConscript('bld/$T/SConscript', exports={'env': env.Clone()})
