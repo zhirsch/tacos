@@ -51,7 +51,7 @@ debugStub.listen.guest32 = 1
 debugStub.listen.guest64 = 1
 
 ide0:0.present = "TRUE"
-ide0:0.fileName = "/home/zhirsch/code/tacos/bld/tacos.iso"
+ide0:0.fileName = "@@ISOPATH@@"
 ide0:0.deviceType = "cdrom-image"
 floppy0.present = "FALSE"
 
