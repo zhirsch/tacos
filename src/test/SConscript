@@ -1,0 +1,12 @@
+# -*- mode: python -*-
+Import(['env', 'iso'])
+
+# Process the VMX file
+vmx = env.Sed(
+    'TacOS/TacOS.vmx',
+    'TacOS/TacOS.vmx.in',
+    PATTERN="s:@@ISOPATH@@:${ISOPATH.abspath}:g",
+    ISOPATH=iso[0],
+)
+
+Return('vmx')
