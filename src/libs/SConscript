@@ -7,6 +7,5 @@ env.Append(CPPDEFINES=['HAVE_LONG_DOUBLE'])
 objects = []
 objects += env.Object('snprintf.c')
 objects += env.Object('string.c')
-objects += env.Object('datetime.c')
 
 Return('objects')

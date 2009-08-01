@@ -4,7 +4,6 @@ Import(['env', 'objects'])
 # Build the i386-specific files.
 objects += env.SConscript('boot/SConscript', exports=['env'])
 objects += env.SConscript('intr/SConscript', exports=['env'])
-objects += env.StaticObject('rtc.S')
 
 # Process the linker script input file to generate the actual linker script.
 linker_script = env.Sed('ld/link.ld', 'ld/link.ld.in',
