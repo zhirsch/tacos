@@ -13,6 +13,6 @@ tss:
         .skip   NUM_INTERRUPTS * 104, 0
 tssend:
 
-/* Add the .note.GNU-stack section (to tell ld that this object file doesn't
-   need an executable stack. */
-//	.section .note.GNU-stack,"",%progbits
+#if defined(__linux__) && defined(__ELF__)
+	.section .note.GNU-stack,"",%progbits
+#endif
