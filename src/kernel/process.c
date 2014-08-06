@@ -69,16 +69,12 @@ pid_t Process_Create(process_entry_point_t entryfunc, uint8_t *stack)
 void Process_Switch(pid_t pid, uint8_t dpl)
 {
    process_t *_old_proc;
-   task_state_t *state;
    uint32_t sel[2];
 
    Assert(pid < NUM_PROCESSES, "Attempted to switch to an invalid process: %d",
 	  pid);
    Assert(dpl <= 3, "Attemped to use an invalid DPL: %d", dpl);
 
-   /* Get the state of the process that's about to be switched to, so that some
-      diagnostic information can be printed. */
-   state = TASK_GetProcessTaskState(pid);
    Info("Jumping to process %d/%d.", pid, dpl);
 
    /* Save the current executing process, and set the process that is about to
