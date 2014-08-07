@@ -1,0 +1,15 @@
+# -*- mode: python -*-
+Import('env')
+
+objects = env.Object([
+    'gdt.S',
+    'idt.S',
+    'isr.S',
+    'pagedir.S',
+    'stack.S',
+])
+
+# The linker script includes boot.S explicitly.  Don't include it in objects.
+boot = env.Object('boot.S')
+
+Return(['objects', 'boot'])

@@ -24,7 +24,6 @@ env = env.Clone(
         '-gstabs+',
         '-g3',
         '-O0' if env['T'] == 'debug' else '-O2',
-        '-m32',
     ],
     LINKFLAGS = [
         '-ffreestanding',
@@ -33,44 +32,46 @@ env = env.Clone(
         '-Wl,--gc-sections',
         '-Wl,--print-gc-sections',
         '-Wl,-z,defs',
+        '-T$LDSCRIPT',
     ],
     CPPPATH = [
         '#include',
     ],
 )
 
-# Ask each subdirectory to build itself and return the object files
-objects = []
-objects += env.SConscript(dirs=['kernel', 'drivers', 'libs'], exports=['env'])
+# Compile the sources.
+objects, boot = env.SConscript(
+    dirs = [
+        'asm',
+    ],
+    exports = [
+        'env',
+    ]
+)
+objects += env.Object([
+    'dt.c',
+    'interrupts.c',
+    'kmain.c',
+    'kprintf.c',
+    'screen.c',
+    'snprintf.c',
+    'tss.c',
+])
+
+# Compile ssp.c with stack protection disabled.
+nosspenv = env.Clone()
+nosspenv.Append(CCFLAGS=['-fno-stack-protector'])
+objects += nosspenv.Object('ssp.c')
 
 # Link all the object files together to create the kernel
-kernel = env.SConscript('arch/i386/SConscript', exports=['env', 'objects'])
+ldscript = env.Sed(
+    'ld/link.ld', 'ld/link.ld.in',
+    PATTERN='s:@@STARTUP@@:$STARTUP:g',
+    STARTUP=boot,
+)
+kernel = env.Program('tacos.bin', objects, LDSCRIPT=ldscript)
+env.Depends(kernel, ldscript)
+env.Depends(kernel, boot)
 env.Alias('tacos', kernel)
 
-# Create a bootable ISO image
-iso = env.MkIsoFs(
-    target='tacos.iso',
-    source=[Dir('iso'),
-            File('iso/boot/grub/menu.lst'),
-            File('iso/boot/grub/stage2_eltorito'),
-            env.Command('iso/boot/tacos', kernel, Copy('$TARGET', '$SOURCE')),
-    ],
-    MKISOFSFLAGS=['-R',
-                  '-b', 'boot/grub/stage2_eltorito',
-                  '-no-emul-boot',
-                  '-boot-load-size', '4',
-                  '-boot-info-table',
-                  '-quiet',
-    ],
-)
-env.Alias('tacos-iso', iso)
-
-# Create the vmx file for testing
-vmx = env.SConscript('test/vmx/SConscript', exports=['env', 'iso'])
-env.Alias('tacos-vmx', vmx)
-
-# Create the bochs config for testing.
-bochs = env.SConscript('test/bochs/SConscript', exports=['env', 'iso'])
-env.Alias('tacos-bochs', bochs)
-
-Default(['tacos-iso', 'tacos-vmx', 'tacos-bochs'])
+Return(['kernel'])

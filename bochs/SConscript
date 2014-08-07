@@ -1,0 +1,13 @@
+# -*- mode: python -*-
+Import(['env', 'iso'])
+
+# Create the bochs config.
+bochs = env.Sed(
+    'bochs.cfg',
+    '#bochs/bochs.cfg.in',
+    PATTERN="s:@@ISOPATH@@:${ISOPATH.abspath}:g",
+    ISOPATH=iso,
+)
+env.Alias('tacos-bochs', bochs)
+
+Return(['bochs'])

@@ -1,0 +1,26 @@
+# -*- mode: python -*-
+Import(['env', 'kernel'])
+
+# Create a bootable ISO image
+iso = env.MkIsoFs(
+    target='tacos.iso',
+    source = env.Dir('root'),
+    MKISOFSFLAGS=[
+        '-R',
+        '-b', 'boot/grub/stage2_eltorito',
+        '-no-emul-boot',
+        '-boot-load-size', '4',
+        '-boot-info-table',
+        '-quiet',
+    ],
+)[0]
+
+def CopyFile(target, source):
+    return env.Command(target, source, Copy('$TARGET', '$SOURCE'))
+
+env.Depends(iso, CopyFile(env.File('root/boot/grub/menu.lst'), env.File('#iso/root/boot/grub/menu.lst')))
+env.Depends(iso, CopyFile(env.File('root/boot/grub/stage2_eltorito'), env.File('#iso/root/boot/grub/stage2_eltorito')))
+env.Depends(iso, CopyFile(env.File('root/boot/tacos'), kernel))
+env.Alias('tacos-iso', iso)
+
+Return(['iso'])
