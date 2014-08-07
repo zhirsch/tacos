@@ -46,16 +46,13 @@ static void system_run(void)
  *****************************************************************************/
 static void system_announce(void)
 {
-   char vendorid[13] = { 0 };
+   char vendorid[17] = { 0 };
    uint32_t *pvid = (uint32_t *)vendorid;
 
-   cpuid(0x0, pvid + 4, pvid + 0, pvid + 2, pvid + 1);
+   cpuid(0x0, pvid + 3, pvid + 0, pvid + 2, pvid + 1);
    kprintf("tacOS version %d.%d.%d, vendorid = %s\n",
       kversion.major, kversion.minor, kversion.tiny, vendorid);
 
-   /* XXX: Figure out why the addresses of pvid change after a call to cpuid */
-
-   pvid = (uint32_t *)vendorid;
    cpuid(0x1, pvid + 0, pvid + 1, pvid + 2, pvid + 3);
    kprintf("  features: edx = %x, ecx = %x\n", pvid[3], pvid[2]);
 }

@@ -3,14 +3,15 @@
  *   The entry point into the kernel. Called from kernel/boot/boot.S.
  *****************************************************************************/
 
-#include <tacos/kernel.h>
-#include <tacos/types.h>
-#include <tacos/panic.h>
-#include <tacos/process.h>
-#include <tacos/task.h>
 #include <tacos/gdt.h>
 #include <tacos/interrupt.h>
+#include <tacos/kernel.h>
+#include <tacos/panic.h>
+#include <tacos/process.h>
 #include <tacos/screen.h>
+#include <tacos/ssp.h>
+#include <tacos/task.h>
+#include <tacos/types.h>
 
 #include <drivers/system.h>
 
@@ -39,6 +40,7 @@ void kmain(uint32_t magic, multiboot_info_t *mbi)
    Assert(magic == MULTIBOOT_BOOTLOADER_MAGIC,
       "Wrong magic number passed to kmain: 0x%x\n", magic);
 
+   init_ssp();
    clearscreen();
 
    /* Hide the hardware cursor. */

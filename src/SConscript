@@ -11,6 +11,7 @@ env = env.Clone(
         '-Wno-unused-parameter',
         '-Wdeclaration-after-statement',
         '-ffreestanding',
+        '-fstack-protector-all',
         '-fno-exceptions',
         '-std=c99',
         '-pedantic',
