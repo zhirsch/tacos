@@ -5,6 +5,7 @@
 #include <drivers/mmu.h>
 
 #include <tacos/panic.h>
+#include <tacos/process.h>
 
 static uint8_t mmu_stack[0x1000];
 
@@ -26,6 +27,8 @@ void mmu_init(void)
 
 void mmu_run(void)
 {
+   Info0("Inside the MMU driver.");
+   Process_Switch(SYSTEM, RING0);
    Panic0("Inside the MMU driver.");
 
    /*
