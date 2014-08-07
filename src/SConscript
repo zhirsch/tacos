@@ -65,7 +65,11 @@ iso = env.MkIsoFs(
 env.Alias('tacos-iso', iso)
 
 # Create the vmx file for testing
-vmx = env.SConscript('test/SConscript', exports=['env', 'iso'])
+vmx = env.SConscript('test/vmx/SConscript', exports=['env', 'iso'])
 env.Alias('tacos-vmx', vmx)
 
-Default(['tacos-iso', 'tacos-vmx'])
+# Create the bochs config for testing.
+bochs = env.SConscript('test/bochs/SConscript', exports=['env', 'iso'])
+env.Alias('tacos-bochs', bochs)
+
+Default(['tacos-iso', 'tacos-vmx', 'tacos-bochs'])
