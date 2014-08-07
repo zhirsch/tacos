@@ -6,7 +6,7 @@
 
 #include <tacos/panic.h>
 
-static uint8_t mmu_stack[1024];
+static uint8_t mmu_stack[0x1000];
 
 static void mmu_init(void);
 static void mmu_run(void);

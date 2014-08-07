@@ -11,7 +11,8 @@
 #include <tacos/kprintf.h>
 #include <tacos/process.h>
 
-static uint8_t system_stack[1024];
+static uint8_t system_stack[0x1000];
+
 static void system_run(void);
 static void system_announce(void);
 
