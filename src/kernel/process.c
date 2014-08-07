@@ -85,7 +85,7 @@ void Process_Switch(pid_t pid, uint8_t dpl)
    /* Switch to the new process. */
    sel[0] = 0x0;
    sel[1] = PROCESS_CreateSelector(pid, dpl);
-   __asm__ __volatile__ ("ljmp *(%0)" : : "r" (sel));
+   __asm__ __volatile__ ("ljmp *(%0)" : : "r" (sel) : "memory");
 
    /* Restore the old process to be the current process. */
    _current_proc = _old_proc;

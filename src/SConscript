@@ -13,6 +13,7 @@ env = env.Clone(
         '-ffreestanding',
         '-fstack-protector-all',
         '-fno-exceptions',
+        '-fstack-usage',
         '-std=c99',
         '-pedantic',
         '-gstabs+',

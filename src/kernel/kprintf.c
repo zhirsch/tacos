@@ -26,7 +26,7 @@ void kprintf(const char *format, ...)
  *****************************************************************************/
 void kvprintf(const char *format, va_list ap)
 {
-   char s[1024];
+   char s[512];
    int c;
 
    c = vsnprintf(s, sizeof(s), format, ap);
