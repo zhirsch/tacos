@@ -5,13 +5,13 @@ _start:
               //    The first thing is to configure virtual memory.
               mov   $kernel_pagedir - 0xC0000000, %ecx
               mov   %ecx, %cr3
-              //    Enable 4 MiB pages.
+              //    Set PSE.
               mov   %cr4, %ecx
               or    $0x00000010, %ecx
               mov   %ecx, %cr4
-              //    Enable paging.
+              //    Set PG and WP.
               mov   %cr0, %ecx
-              or    $0x80000000, %ecx
+              or    $0x80010000, %ecx
               mov   %ecx, %cr0
               //    Indirect jump so that %eip is set to a virtual address.
               lea   .L1, %ecx

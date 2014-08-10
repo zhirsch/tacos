@@ -1,6 +1,6 @@
 #include "screen.h"
 
-#define VGAMEMBASE ((unsigned short*)0xC00B8000)
+#define VGAMEMBASE ((unsigned short*)0x000B8000)
 #define MAXLINES 25
 #define MAXCOLS 80
 
