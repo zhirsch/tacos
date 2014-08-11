@@ -1,0 +1,138 @@
+diff -Naur ../source.1/newlib-2.1.0.orig/config.sub newlib-2.1.0/config.sub
+--- ../source.1/newlib-2.1.0.orig/config.sub	2013-04-29 08:13:53.000000000 -0700
++++ newlib-2.1.0/config.sub	2014-08-11 10:35:52.136423974 -0700
+@@ -2,7 +2,7 @@
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2013 Free Software Foundation, Inc.
+ 
+-timestamp='2013-04-24'
++timestamp='2014-08-11'
+ 
+ # This file is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by
+@@ -1355,6 +1355,7 @@
+ 	      | -sym* | -kopensolaris* | -plan9* \
+ 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+ 	      | -aos* | -aros* \
++	      | -tacos* \
+ 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+ 	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+ 	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/configure.host newlib-2.1.0/newlib/configure.host
+--- ../source.1/newlib-2.1.0.orig/newlib/configure.host	2013-12-20 02:27:49.000000000 -0800
++++ newlib-2.1.0/newlib/configure.host	2014-08-11 10:35:52.136423974 -0700
+@@ -468,6 +468,10 @@
+ 	##newlib_cflags="${newlib_cflags} -idirafter ${gcc_dir}include"
+ 	;;
+ 
++  i[34567]86-*-tacos*)
++        sys_dir=tacos
++        ;;
++
+   m68hc11-*-*|m6811-*-*|m6812-*-*|m68hc12-*-*)
+ 	;;
+ 
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/configure.in newlib-2.1.0/newlib/libc/sys/configure.in
+--- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/configure.in	2012-02-21 14:34:31.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/configure.in	2014-08-11 10:35:52.136423974 -0700
+@@ -46,6 +46,7 @@
+ 	sysvnecv70) AC_CONFIG_SUBDIRS(sysvnecv70) ;;
+ 	tic80) AC_CONFIG_SUBDIRS(tic80) ;;
+ 	w65) AC_CONFIG_SUBDIRS(w65) ;;
++	tacos) AC_CONFIG_SUBDIRS(tacos) ;;
+ 	z8ksim) AC_CONFIG_SUBDIRS(z8ksim) ;;
+   esac;
+ fi
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in newlib-2.1.0/newlib/libc/sys/tacos/configure.in
+--- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/configure.in	2014-08-11 10:35:52.136423974 -0700
+@@ -0,0 +1,7 @@
++AC_PREREQ(2.59)
++AC_INIT([newlib], [NEWLIB_VERSION])
++AC_CONFIG_SRCDIR([crt0.S])
++AC_CONFIG_AUX_DIR(../../../..)
++NEWLIB_CONFIGURE(../../..)
++AC_CONFIG_FILES([Makefile])
++AC_OUTPUT
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S newlib-2.1.0/newlib/libc/sys/tacos/crt0.S
+--- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/crt0.S	2014-08-11 10:35:52.136423974 -0700
+@@ -0,0 +1,6 @@
++              .global _start
++_start:
++              call  main
++              call  exit
++1:            hlt
++              jmp   1b
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am
+--- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am	2014-08-11 10:35:52.136423974 -0700
+@@ -0,0 +1,25 @@
++#AUTOMAKE_OPTIONS = cygnus
++INCLUDES = $(NEWLIB_CFLAGS) $(CROSS_CFLAGS) $(TARGET_CFLAGS)
++AM_CCASFLAGS = $(INCLUDES)
++
++noinst_LIBRARIES = lib.a
++
++if MAY_SUPPLY_SYSCALLS
++extra_objs = $(lpfx)syscalls.o
++else
++extra_objs =
++endif
++
++lib_a_SOURCES =
++lib_a_LIBADD = $(extra_objs)
++EXTRA_lib_a_SOURCES = syscalls.c crt0.S
++lib_a_DEPENDENCIES = $(extra_objs)
++lib_a_CCASFLAGS = $(AM_CCASFLAGS)
++lib_a_CFLAGS = $(AM_CFLAGS)
++
++if MAY_SUPPLY_SYSCALLS
++all: crt0.o
++endif
++
++ACLOCAL_AMFLAGS = -I ../../..
++CONFIG_STATUS_DEPENDENCIES = $(newlib_basedir)/configure.host
+diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c
+--- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c	2014-08-11 11:03:05.869787031 -0700
+@@ -0,0 +1,39 @@
++// TODO
++
++#include <stdint.h>
++#include <stdlib.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <unistd.h>
++
++void _exit(int status) {
++  while (1) { }
++}
++
++void* sbrk(intptr_t increment) {
++  return NULL;
++}
++
++_READ_WRITE_RETURN_TYPE _EXFUN(write, (int fd, const void* buf, size_t count)) {
++  return -1;
++}
++
++int close(int fd) {
++  return -1;
++}
++
++int fstat(int fd, struct stat* buf) {
++  return -1;
++}
++
++int isatty(int fd) {
++  return 0;
++}
++
++off_t lseek(int fd, off_t offset, int whence) {
++  return (off_t)-1;
++}
++
++_READ_WRITE_RETURN_TYPE read(int fd, void* buf, size_t count) {
++  return -1;
++}
