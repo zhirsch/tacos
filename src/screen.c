@@ -1,5 +1,7 @@
 #include "screen.h"
 
+#include "portio.h"
+
 #define VGAMEMBASE ((unsigned short*)0x000B8000)
 #define MAXLINES 25
 #define MAXCOLS 80
@@ -24,10 +26,6 @@ void clearscreen(void) {
   cursor.y = 0;
 }
 
-static inline void outb(unsigned short port, unsigned char val) {
-  __asm__ __volatile__ ("outb %0, %1" : : "a" (val), "dN" (port));
-}
-
 void puts(const char* text) {
   // Write each char.
   for (const char* p = text; *p != '\0'; p++) {
@@ -49,12 +47,14 @@ static void putch(char ch) {
     // Write the character to the screen.
     unsigned short* p = VGAMEMBASE + (cursor.y * MAXCOLS + cursor.x);
     *p = ch | (attrib << 8);
+    outb(0xe9, ch);
     cursor.x++;
   }
   if (ch == '\n' || cursor.x >= MAXCOLS) {
     // Move to the next line.
     cursor.x = 0;
     cursor.y++;
+    outb(0xe9, '\n');
   }
   scroll();
 }
