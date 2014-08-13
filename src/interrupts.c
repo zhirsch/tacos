@@ -4,9 +4,9 @@
 #include "kprintf.h"
 #include "tss.h"
 
-extern char kernel_stack[];
+static char intr_stack[0x4000] __attribute__((aligned(0x20)));
 
-static struct tss intr_tss[256];
+static struct tss intr_tss[256] __attribute__((aligned(0x1000)));
 
 extern void (*(isr_array[]))(void);
 
@@ -37,12 +37,12 @@ void init_interrupts(void) {
     idt[i].reserved4   = 0;
 
     // Set the TSS.
-    intr_tss[i].esp0   = (unsigned int)kernel_stack;
+    intr_tss[i].esp0   = (unsigned int)intr_stack;
     intr_tss[i].ss0    = 0x10;
     __asm__ __volatile__ ("movl %%cr3, %0" : "=r" (intr_tss[i].cr3));
     intr_tss[i].eip    = (unsigned int)(isr_array[i]);
     intr_tss[i].eflags = 0x0002;
-    intr_tss[i].esp    = (unsigned int)kernel_stack;
+    intr_tss[i].esp    = (unsigned int)intr_stack;
     intr_tss[i].cs     = 0x08;
     intr_tss[i].ss     = 0x10;
     intr_tss[i].ds     = 0x10;
