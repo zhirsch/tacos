@@ -53,6 +53,7 @@ objects += env.Object([
     'interrupts.c',
     'kmain.c',
     'kprintf.c',
+    'pic.c',
     'screen.c',
     'snprintf.c',
     'tss.c',

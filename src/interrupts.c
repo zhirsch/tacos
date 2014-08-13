@@ -2,6 +2,8 @@
 
 #include "dt.h"
 #include "kprintf.h"
+#include "portio.h"
+#include "screen.h"
 #include "tss.h"
 
 static char intr_stack[0x4000] __attribute__((aligned(0x20)));
@@ -52,14 +54,46 @@ void init_interrupts(void) {
   }
 }
 
+void isr_page_fault(int vector, int error_code, struct tss* prev_tss) {
+  unsigned int cr2;
+  __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
+  kprintf("  at %08x\n", cr2);
+  *(char*)(0xB0000000) = '\0';
+}
+
+void isr_timer(int vector, int error_code, struct tss* prev_tss) {
+}
+
+volatile int got_atapi_irq = 0;
+void isr_atapi(int vector, int error_code, struct tss* prev_tss) {
+  got_atapi_irq = 1;
+}
+
 void isr_common(int vector, int error_code) {
   struct tss* prev_tss = get_prev_tss();
-  kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-  if (vector == 0xe) {
-    unsigned int cr2;
-    __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-    kprintf("  at %08x\n", cr2);
-    *(char*)(0xB0000000) = '\0';
+  if (vector != 0x20) {
+    kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
   }
-  __asm__ __volatile__ ( "cli; hlt" );
+
+  switch (vector) {
+  case 0x0e:
+    isr_page_fault(vector, error_code, prev_tss);
+    break;
+  case 0x20:
+    isr_timer(vector, error_code, prev_tss);
+    break;
+  case 0x2e:
+    isr_atapi(vector, error_code, prev_tss);
+    break;
+  default:
+    puts("  unhandled!\n");
+  }
+
+  // EOI
+  if (0x20 <= vector && vector < 0x30) {
+    if (0x28 <= vector && vector < 0x30) {
+      outb(0x20+0x80, 0x20);
+    }
+    outb(0x20, 0x20);
+  }
 }
