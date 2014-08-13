@@ -4,6 +4,7 @@ isr_\()\n\():
               call  isr_common
               add   $0x4, %esp      // Pop the vector.
               iret
+              jmp   isr_\()\n\()
               .endm
 
               .macro define_isr_with_error_code n
@@ -12,6 +13,7 @@ isr_\()\n\():
               call  isr_common
               add   $0x8, %esp      // Pop the vector and error code.
               iret
+              jmp   isr_\()\n\()
               .endm
 
               .text
