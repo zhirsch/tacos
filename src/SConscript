@@ -40,13 +40,14 @@ env = env.Clone(
 )
 
 # Compile the sources.
-objects, boot = env.SConscript(
+objects, boot = env.SConscript(dirs = 'asm', exports = 'env')
+objects += env.SConscript(
     dirs = [
-        'asm',
+        'ide',
     ],
     exports = [
         'env',
-    ]
+    ],
 )
 objects += env.Object([
     'dt.c',

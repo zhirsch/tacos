@@ -21,8 +21,10 @@ static inline uint8_t inb(uint16_t port) {
   return val;
 }
 
-static inline void insw(uint16_t port, uint16_t* buffer, int cnt) {
-  __asm__ __volatile__ ("rep insw" : : "c" (cnt), "dN" (port), "D" (buffer) : "memory");
+static inline uint16_t inw(uint16_t port) {
+  uint16_t val;
+  __asm__ __volatile__ ("inw %1, %0" : "=a" (val) : "dN" (port) : "memory");
+  return val;
 }
 
 #endif /* PORTIO_H */

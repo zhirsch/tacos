@@ -1,5 +1,7 @@
 #include "interrupts.h"
 
+#include <stdlib.h>
+
 #include "dt.h"
 #include "kprintf.h"
 #include "portio.h"
@@ -7,10 +9,12 @@
 #include "tss.h"
 
 static char intr_stack[0x4000] __attribute__((aligned(0x20)));
-
 static struct tss intr_tss[256] __attribute__((aligned(0x1000)));
+static interrupt_handler_func handlers[256] = { NULL };
 
 extern void (*(isr_array[]))(void);
+
+static void timer_handler(int vector, int error_code, struct tss* prev_tss) { }
 
 void init_interrupts(void) {
   for (int i = 0; i < 256; i++) {
@@ -52,22 +56,26 @@ void init_interrupts(void) {
     intr_tss[i].fs     = 0x10;
     intr_tss[i].gs     = 0x10;
   }
+
+  // TODO(zhirsch): Move this somewhere specific to the PIT.
+  interrupt_register_handler(0x20, timer_handler);
 }
 
-void isr_page_fault(int vector, int error_code, struct tss* prev_tss) {
-  unsigned int cr2;
-  __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("  at %08x\n", cr2);
-  *(char*)(0xB0000000) = '\0';
+void interrupt_register_handler(int vector, interrupt_handler_func func) {
+  if (handlers[vector] != NULL) {
+    kprintf("Interrupt handler already registered for vector %d: %08lx\n",
+            vector, (uintptr_t)handlers[vector]);
+    __asm__ __volatile__ ("cli;hlt");
+  }
+  handlers[vector] = func;
 }
 
-void isr_timer(int vector, int error_code, struct tss* prev_tss) {
-}
-
-volatile int got_atapi_irq = 0;
-void isr_atapi(int vector, int error_code, struct tss* prev_tss) {
-  got_atapi_irq = 1;
-}
+/* void isr_page_fault(int vector, int error_code, struct tss* prev_tss) { */
+/*   unsigned int cr2; */
+/*   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2)); */
+/*   kprintf("  at %08x\n", cr2); */
+/*   *(char*)(0xB0000000) = '\0'; */
+/* } */
 
 void isr_common(int vector, int error_code) {
   struct tss* prev_tss = get_prev_tss();
@@ -75,17 +83,9 @@ void isr_common(int vector, int error_code) {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
   }
 
-  switch (vector) {
-  case 0x0e:
-    isr_page_fault(vector, error_code, prev_tss);
-    break;
-  case 0x20:
-    isr_timer(vector, error_code, prev_tss);
-    break;
-  case 0x2e:
-    isr_atapi(vector, error_code, prev_tss);
-    break;
-  default:
+  if (handlers[vector] != NULL) {
+    handlers[vector](vector, error_code, prev_tss);
+  } else {
     puts("  unhandled!\n");
   }
 

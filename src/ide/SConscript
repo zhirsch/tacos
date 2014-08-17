@@ -1,0 +1,9 @@
+# -*- mode: python -*-
+Import('env')
+
+# Compile the sources.
+objects = env.Object([
+    'ide.c',
+])
+
+Return(['objects'])
