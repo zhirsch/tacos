@@ -1,0 +1,33 @@
+# -*- mode: python -*-
+Import('env')
+
+# Create the SCons environment.
+env = env.Clone(
+    CC = 'toolchain/install/bin/i686-pc-tacos-gcc',
+    CCFLAGS = [
+        '-Wall',
+        '-Wextra',
+        '-Werror',
+        '-Wno-unused-parameter',
+        '-Wdeclaration-after-statement',
+        '-fno-exceptions',
+        '-std=c99',
+        '-pedantic',
+        '-gstabs+',
+        '-g3',
+        '-O0' if env['T'] == 'debug' else '-O2',
+    ],
+)
+
+# Compile the sources.
+binaries = env.SConscript(
+    dirs = [
+        'dummy',
+        'hello',
+    ],
+    exports = [
+        'env',
+    ],
+)
+
+Return(['binaries'])

@@ -1,0 +1,5 @@
+# -*- mode: python -*-
+Import('env')
+
+dummy = env.Program('dummy.c')[0]
+Return(['dummy'])

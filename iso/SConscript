@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-Import(['env', 'kernel'])
+Import(['env', 'kernel', 'user'])
 
 # Create a bootable ISO image
 iso = env.MkIsoFs(
@@ -21,6 +21,8 @@ def CopyFile(target, source):
 env.Depends(iso, CopyFile(env.File('root/boot/grub/menu.lst'), env.File('#iso/root/boot/grub/menu.lst')))
 env.Depends(iso, CopyFile(env.File('root/boot/grub/stage2_eltorito'), env.File('#iso/root/boot/grub/stage2_eltorito')))
 env.Depends(iso, CopyFile(env.File('root/boot/tacos'), kernel))
+for binary in user:
+    env.Depends(iso, CopyFile(env.File('root/%s' % binary.name), binary))
 env.Alias('tacos-iso', iso)
 
 Return(['iso'])
