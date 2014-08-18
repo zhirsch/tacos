@@ -108,7 +108,7 @@ static struct pte pagetable[1024] __attribute__ ((aligned(0x1000)));
 static void page_fault_handler(int vector, int error_code, struct tss* prev_tss) {
   uint32_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("  at %08lx\n", cr2);
+  kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
   // Cause a double fault!
   *(char*)(0xB0000000) = '\0';
 }

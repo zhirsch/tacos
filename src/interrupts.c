@@ -70,22 +70,13 @@ void interrupt_register_handler(int vector, interrupt_handler_func func) {
   handlers[vector] = func;
 }
 
-/* void isr_page_fault(int vector, int error_code, struct tss* prev_tss) { */
-/*   unsigned int cr2; */
-/*   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2)); */
-/*   kprintf("  at %08x\n", cr2); */
-/*   *(char*)(0xB0000000) = '\0'; */
-/* } */
-
 void isr_common(int vector, int error_code) {
   struct tss* prev_tss = get_prev_tss();
-  if (vector != 0x20) {
-    kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-  }
 
   if (handlers[vector] != NULL) {
     handlers[vector](vector, error_code, prev_tss);
   } else {
+    kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
     puts("  unhandled!\n");
   }
 
