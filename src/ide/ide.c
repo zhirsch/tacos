@@ -270,7 +270,7 @@ static int wait_for_bsy_to_drq(struct ide_controller* controller) {
   return 1;
 }
 
-int ide_read(int controller, int position, uint16_t* buffer, int lba, int nwords) {
+int ide_read(int controller, int position, void* buffer, int lba, int nwords) {
   struct ide_device* device;
   int iobase;
   uint8_t packet[12];
@@ -334,7 +334,7 @@ int ide_read(int controller, int position, uint16_t* buffer, int lba, int nwords
 
   // Read the data.
   for (int i = 0; i < nwords; i++) {
-    buffer[i] = inw(iobase + ATA_REGISTER_DATA);
+    ((uint16_t*)buffer)[i] = inw(iobase + ATA_REGISTER_DATA);
   }
 
   // Wait for DRDY.  This ensures that the device is back in a known state.
