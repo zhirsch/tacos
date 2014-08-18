@@ -143,6 +143,9 @@ static void init_paging(void) {
     pagetable[i].addr = i;
   }
 
+  // Unmap the page containing NULL.
+  pagetable[0].present = 0;
+
   // Unmap the second page.
   __builtin_memset(kernel_pagedir + 1, 0, sizeof(kernel_pagedir[1]));
 

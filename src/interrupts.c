@@ -78,6 +78,7 @@ void isr_common(int vector, int error_code) {
   } else {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
     puts("  unhandled!\n");
+    __asm__ __volatile__ ("cli; hlt");
   }
 
   // EOI
