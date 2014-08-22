@@ -4,8 +4,8 @@
 #include "ide/ide.h"
 #include "interrupts.h"
 #include "kprintf.h"
+#include "mmu.h"
 #include "multiboot.h"
-#include "pagedir.h"
 #include "pic.h"
 #include "portio.h"
 #include "screen.h"
@@ -17,7 +17,6 @@ extern char kernel_stack[];
 
 static struct tss kernel_tss;
 
-static void init_paging(void);
 static void init_kernel_tss(void);
 
 void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
@@ -64,7 +63,7 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
 void kmain(int magic, multiboot_info_t* mbi) {
   // Initialize the address space.
   init_ssp();
-  init_paging();
+  init_mmu(mbi);
   init_kernel_tss();
 
   // Clear the screen.
@@ -101,55 +100,6 @@ void kmain(int magic, multiboot_info_t* mbi) {
 
   puts("Done!\n");
   __asm__ __volatile__ ("cli; hlt");
-}
-
-static struct pte pagetable[1024] __attribute__ ((aligned(0x1000)));
-
-static void page_fault_handler(int vector, int error_code, struct tss* prev_tss) {
-  uint32_t cr2;
-  __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
-  // Cause a double fault!
-  *(char*)(0xB0000000) = '\0';
-}
-
-static void init_paging(void) {
-  interrupt_register_handler(0xe, page_fault_handler);
-
-  // Use PTEs for the first page.
-  kernel_pagedir[0].e.table.present = 1;
-  kernel_pagedir[0].e.table.rw = 1;
-  kernel_pagedir[0].e.table.us = 0;
-  kernel_pagedir[0].e.table.pwt = 0;
-  kernel_pagedir[0].e.table.pcd = 0;
-  kernel_pagedir[0].e.table.accessed = 0;
-  kernel_pagedir[0].e.table.reserved1 = 0;
-  kernel_pagedir[0].e.table.ps = 0;
-  kernel_pagedir[0].e.table.reserved2 = 0;
-  kernel_pagedir[0].e.table.addr = (((unsigned int)pagetable) - 0xC0000000) >> 12;
-
-  // Identity map the first megabyte for easy access to the BIOS, VGA, etc.
-  for (int i = 0; i < 256; i++) {
-    pagetable[i].present = 1;
-    pagetable[i].rw = 1;
-    pagetable[i].us = 0;
-    pagetable[i].pwt = 0;
-    pagetable[i].pcd = 0;
-    pagetable[i].accessed = 0;
-    pagetable[i].dirty = 0;
-    pagetable[i].pat = 0;
-    pagetable[i].global = 0;
-    pagetable[i].reserved1 = 0;
-    pagetable[i].addr = i;
-  }
-
-  // Unmap the page containing NULL.
-  pagetable[0].present = 0;
-
-  // Unmap the second page.
-  __builtin_memset(kernel_pagedir + 1, 0, sizeof(kernel_pagedir[1]));
-
-  __asm__ __volatile__ ("mov %%cr3, %%eax; mov %%eax, %%cr3" : : : "eax");
 }
 
 static void init_kernel_tss(void) {

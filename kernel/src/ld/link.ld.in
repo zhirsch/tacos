@@ -4,19 +4,27 @@ STARTUP(@@STARTUP@@);
 
 SECTIONS {
     . = 0xC0100000;
+    kernel_start = ALIGN(0x1000);
+
+    kernel_ro_start = ALIGN(0x1000);
     .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000) {
         *(.text)
     }
     .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xC0000000) {
         *(.rodata*)
     }
-    . = 0xC0400000;
+    kernel_ro_end = ALIGN(0x1000);
+
+    kernel_rw_start = ALIGN(0x1000);
     .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000) {
         *(.data)
     }
     .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000) {
         *(.bss)
     }
+    kernel_rw_end = ALIGN(0x1000);
+
+    kernel_end = ALIGN(0x1000);
 
     /DISCARD/ : {
       KEEP(*(.eh_frame))
