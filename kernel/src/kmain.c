@@ -6,6 +6,7 @@
 #include "kprintf.h"
 #include "mmu.h"
 #include "multiboot.h"
+#include "panic.h"
 #include "pic.h"
 #include "portio.h"
 #include "screen.h"
@@ -98,8 +99,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
     }
   }
 
-  puts("Done!\n");
-  __asm__ __volatile__ ("cli; hlt");
+  panic0("Done!\n");
 }
 
 static void init_kernel_tss(void) {

@@ -4,6 +4,7 @@
 
 #include "dt.h"
 #include "kprintf.h"
+#include "panic.h"
 #include "portio.h"
 #include "screen.h"
 #include "tss.h"
@@ -63,9 +64,8 @@ void init_interrupts(void) {
 
 void interrupt_register_handler(int vector, interrupt_handler_func func) {
   if (handlers[vector] != NULL) {
-    kprintf("Interrupt handler already registered for vector %d: %08lx\n",
-            vector, (uintptr_t)handlers[vector]);
-    __asm__ __volatile__ ("cli;hlt");
+    panic("Interrupt handler already registered for vector %d: %08lx\n",
+          vector, (uintptr_t)handlers[vector]);
   }
   handlers[vector] = func;
 }
@@ -77,8 +77,7 @@ void isr_common(int vector, int error_code) {
     handlers[vector](vector, error_code, prev_tss);
   } else {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-    puts("  unhandled!\n");
-    __asm__ __volatile__ ("cli; hlt");
+    panic0("  unhandled!\n");
   }
 
   // EOI

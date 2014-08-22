@@ -5,6 +5,7 @@
 #include "interrupts.h"
 #include "kprintf.h"
 #include "multiboot.h"
+#include "panic.h"
 #include "tss.h"
 
 // The size of each page.
@@ -48,8 +49,7 @@ static void invlpg(void* vaddr);
 
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
-    kprintf("MMU: multiboot doesn't provide mem_*\n");
-    __asm__ __volatile__ ("cli; hlt");
+    panic0("MMU: multiboot doesn't provide mem_*\n");
   }
 
   // Populate the paddr stack.
@@ -111,8 +111,7 @@ static void init_kernel_page_directory(void) {
 void* mmu_new_physical_page(void) {
   const uintptr_t paddr = *(paddr_stack--);
   if (paddr == PADDR_STACK_SENTINEL) {
-    kprintf("MMU: out of physical pages\n");
-    __asm__ __volatile__ ("cli; hlt");
+    panic0("MMU: out of physical pages\n");
   }
   return (void*)paddr;
 }
