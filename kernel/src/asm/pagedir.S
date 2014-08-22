@@ -3,7 +3,7 @@
               .global kernel_pagedir
 kernel_pagedir:
               //    0x00000000 -> 0x00000000 (rw)
-              .long 0x00000081
+              .long 0x00000083
 
               .skip 767 * 4, 0
 

@@ -62,13 +62,14 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
-  // Initialize the address space.
   init_ssp();
-  init_mmu(mbi);
-  init_kernel_tss();
 
   // Clear the screen.
   clearscreen();
+
+  // Initialize the address space.
+  init_mmu(mbi);
+  init_kernel_tss();
 
   // Enable interrupts.
   init_interrupts();

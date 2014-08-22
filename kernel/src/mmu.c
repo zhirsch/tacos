@@ -48,6 +48,8 @@ static void init_kernel_page_directory(void);
 static void invlpg(void* vaddr);
 
 void init_mmu(multiboot_info_t* mbi) {
+  int pages = 0;
+
   if (!(mbi->flags & 0x1)) {
     panic0("MMU: multiboot doesn't provide mem_*\n");
   }
@@ -60,6 +62,7 @@ void init_mmu(multiboot_info_t* mbi) {
       continue;
     }
     *(++paddr_stack) = paddr;
+    pages++;
   }
   for (unsigned long i = 0; i < mbi->mem_upper / 4 - 1; i++) {
     const uintptr_t paddr = HI_MEM_START_ADDR + PAGESIZE * i;
@@ -67,7 +70,10 @@ void init_mmu(multiboot_info_t* mbi) {
       continue;
     }
     *(++paddr_stack) = paddr;
+    pages++;
   }
+
+  kprintf("MMU: %d bytes available (%d pages)\n", pages * PAGESIZE, pages);
 
   // Register the page fault handler.
   interrupt_register_handler(0xe, page_fault_handler);
