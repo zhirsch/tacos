@@ -34,7 +34,7 @@ _start:
 
 .L2:
               //    Set the stack.
-              movl  $kernel_stack, %esp
+              movl  $kernel_stack_top, %esp
               //    Reset EFLAGS.
               pushl $0
               popf

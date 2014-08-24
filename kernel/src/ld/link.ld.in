@@ -5,10 +5,10 @@ STARTUP(@@STARTUP@@);
 SECTIONS {
          /* The kernel starts at the first MiB of the fourth GiB. */
          . = 0xC0100000;
-         kernel_start = ALIGN(0x1000);
+         kernel_start = ABSOLUTE(ALIGN(0x1000));
 
         /* The read-only section of the kernel. */
-        kernel_ro_start = ALIGN(0x1000);
+        kernel_ro_start = ABSOLUTE(ALIGN(0x1000));
         .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000) {
             *(.text)
         }
@@ -18,30 +18,34 @@ SECTIONS {
         .eh_frame ALIGN(0x1000) : AT(ADDR(.eh_frame) - 0xC0000000) {
             KEEP(*(.eh_frame))
         }
-        kernel_ro_end = .;
+        kernel_ro_end = ABSOLUTE(.);
 
         /* The read-write section of the kernel. */
-        kernel_rw_start = ALIGN(0x1000);
+        kernel_rw_start = ABSOLUTE(ALIGN(0x1000));
         .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000) {
             *(.data)
         }
         .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000) {
             *(.bss)
+            . = ALIGN(0x1000);
+            kernel_stack_bottom = .;
+            . += 0x4000;
+            kernel_stack_top    = .;
         }
-        kernel_rw_end = .;
+        kernel_rw_end = ABSOLUTE(.);
 
         /* The kernel ends after the last page is padded. */
-        kernel_end = ALIGN(0x1000);
+        kernel_end = ABSOLUTE(ALIGN(0x1000));
 
         /* The stack of physical pages starts on the next page after
           the kernel ends. */
-        paddr_stack_bottom = ALIGN(0x1000);
+        paddr_stack_bottom = ABSOLUTE(ALIGN(0x1000));
 
         /* The kernel's heap is 256 MiB. */
-        kernel_heap_start = 0xE0000000;
-        kernel_heap_end   = kernel_heap_start + 0x10000000;
+        kernel_heap_start = ABSOLUTE(0xE0000000);
+        kernel_heap_end   = ABSOLUTE(kernel_heap_start + 0x10000000);
 
         /* The page directory for the current address space is always
            at the top 4 MiB. */
-        page_directory = 0xFFC00000;
+        page_directory = ABSOLUTE(0xFFC00000);
 }
