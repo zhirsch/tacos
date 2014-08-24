@@ -3,30 +3,48 @@ ENTRY("_start")
 STARTUP(@@STARTUP@@);
 
 SECTIONS {
-    . = 0xC0100000;
-    kernel_start = ALIGN(0x1000);
+         /* The kernel starts at the first MiB of the fourth GiB. */
+         . = 0xC0100000;
+         kernel_start = ALIGN(0x1000);
 
-    kernel_ro_start = ALIGN(0x1000);
-    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000) {
-        *(.text)
-    }
-    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xC0000000) {
-        *(.rodata*)
-    }
-    kernel_ro_end = ALIGN(0x1000);
+        /* The read-only section of the kernel. */
+        kernel_ro_start = ALIGN(0x1000);
+        .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000) {
+            *(.text)
+        }
+        .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xC0000000) {
+            *(.rodata*)
+        }
+        kernel_ro_end = .;
 
-    kernel_rw_start = ALIGN(0x1000);
-    .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000) {
-        *(.data)
-    }
-    .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000) {
-        *(.bss)
-    }
-    kernel_rw_end = ALIGN(0x1000);
+        /* The read-write section of the kernel. */
+        kernel_rw_start = ALIGN(0x1000);
+        .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000) {
+            *(.data)
+        }
+        .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000) {
+            *(.bss)
+        }
+        kernel_rw_end = .;
 
-    kernel_end = ALIGN(0x1000);
+        /* The kernel ends after the last page is padded. */
+        kernel_end = ALIGN(0x1000);
 
-    /DISCARD/ : {
-      KEEP(*(.eh_frame))
-    }
+        /* The stack of physical pages starts on the next page after
+          the kernel ends. */
+        paddr_stack_bottom = ALIGN(0x1000);
+
+        /* The kernel's heap is 256 MiB. */
+        kernel_heap_start = 0xE0000000;
+        kernel_heap_end   = kernel_heap_start + 0x10000000;
+
+        /* The page directory for the current address space is always
+           at the top 4 MiB. */
+        page_directory = 0xFFC00000;
+
+        /* Get rid of all the other sections.
+           Keep .eh_frame, though.  I don't know why. */
+        /DISCARD/ : {
+          KEEP(*(.eh_frame))
+        }
 }

@@ -54,11 +54,13 @@ objects += env.Object([
     'dt.c',
     'interrupts.c',
     'kmain.c',
+    'kmalloc.c',
     'kprintf.c',
     'mmu.c',
     'pic.c',
     'screen.c',
     'snprintf.c',
+    'string.c',
     'tss.c',
 ])
 

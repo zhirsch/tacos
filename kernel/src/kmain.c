@@ -1,8 +1,10 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "dt.h"
 #include "ide/ide.h"
 #include "interrupts.h"
+#include "kmalloc.h"
 #include "kprintf.h"
 #include "mmu.h"
 #include "multiboot.h"
@@ -21,26 +23,33 @@ static struct tss kernel_tss;
 static void init_kernel_tss(void);
 
 void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
-  char path[512] = {'\0'};
-  uint8_t buffer[2048];
+  char* path;
+  uint8_t* buffer;
   uint32_t extent_pos, extent_len;
   int i;
 
   if (__builtin_strcmp(parent, "/") == 0) {
-    snprintf(path, sizeof(path) - 1, "/%.*s", dirrec[32], dirrec+33);
+    const int size = 1 + dirrec[32] + 1;
+    path = kmalloc(size);
+    snprintf(path, size, "/%.*s", dirrec[32], dirrec+33);
   } else {
-    snprintf(path, sizeof(path) - 1, "%s/%.*s", parent, dirrec[32], dirrec+33);
+    const int size = strlen(parent) + 1 + dirrec[32] + 1;
+    path = kmalloc(size);
+    snprintf(path, size, "%s/%.*s", parent, dirrec[32], dirrec+33);
   }
-
   __builtin_memcpy(&extent_pos, dirrec + 2, 4);
   __builtin_memcpy(&extent_len, dirrec + 10, 4);
   kprintf("%02x %-40s (%08lx, %08lx)\n", dirrec[25], path, extent_pos, extent_len);
+  kfree(path);
+
   if (!(dirrec[25] & 0x2)) {
     return;
   }
 
+  buffer = kmalloc(extent_len);
   if (!ide_read(0, 0, buffer, extent_pos, extent_len / 2)) {
     kprintf("Error!\n");
+    kfree(buffer);
     return;
   }
 
@@ -49,15 +58,20 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
   i += buffer[i];
   i += buffer[i];
   while (buffer[i] != 0) {
-    __builtin_memset(path, '\0', sizeof(path));
     if (__builtin_strcmp(parent, "/") == 0) {
-      snprintf(path, sizeof(path), "/%.*s", dirrec[32], dirrec+33);
+      const int size = 1 + dirrec[32] + 1;
+      path = kmalloc(size);
+      snprintf(path, size, "/%.*s", dirrec[32], dirrec+33);
     } else {
-      snprintf(path, sizeof(path), "%s/%.*s", parent, dirrec[32], dirrec+33);
+      const int size = strlen(parent) + 1 + dirrec[32] + 1;
+      path = kmalloc(size);
+      snprintf(path, size, "%s/%.*s", parent, dirrec[32], dirrec+33);
     }
     iso9660_print_paths(buffer+i, path);
+    kfree(path);
     i += buffer[i];
   }
+  kfree(buffer);
 }
 
 // kmain is the main entry point to the kernel after boot.S executes.
@@ -79,11 +93,16 @@ void kmain(int magic, multiboot_info_t* mbi) {
   // Initialize IDE.
   init_ide();
 
+  {
+    void* ptr = kmalloc(10 << 20);
+    kfree(ptr);
+  }
+
   // Read the first non-reserved sector of the CD-ROM.
   {
     int lba = 0x10;
+    uint8_t* buffer = kmalloc(2048);
     while (1) {
-      uint8_t buffer[2048];
       if (!ide_read(0, 0, buffer, lba, 1024)) {
         kprintf("Uh-oh @%x\n", lba);
         break;
@@ -98,6 +117,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
       }
       lba++;
     }
+    kfree(buffer);
   }
 
   panic0("Done!\n");
