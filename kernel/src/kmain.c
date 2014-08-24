@@ -116,7 +116,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
     kfree(buffer);
   }
 
-  panic0("Done!\n");
+  panic("Done!\n");
 }
 
 static void init_kernel_tss(void) {

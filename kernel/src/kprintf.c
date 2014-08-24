@@ -7,13 +7,15 @@
 
 void kprintf(const char* format, ...) {
   va_list ap;
+  va_start(ap, format);
+  kvprintf(format, ap);
+  va_end(ap);
+}
+
+void kvprintf(const char* format, va_list ap) {
   char s[512];
   int c;
-
-  va_start(ap, format);
   c = vsnprintf(s, sizeof(s) - 1, format, ap);
-  va_end(ap);
-
   s[c] = '\0';
   puts(s);
 }

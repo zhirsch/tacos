@@ -57,7 +57,7 @@ static void init_paging(void);
 
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
-    panic0("MMU: multiboot doesn't provide mem_*\n");
+    panic("MMU: multiboot doesn't provide mem_*\n");
   }
 
   // Register the page fault handler.
@@ -136,7 +136,7 @@ static void init_paging(void) {
 void* mmu_acquire_physical_page(void) {
   const uintptr_t paddr = *(paddr_stack--);
   if (paddr == PADDR_STACK_SENTINEL) {
-    panic0("MMU: out of physical pages\n");
+    panic("MMU: out of physical pages\n");
   }
   return (void*)paddr;
 }

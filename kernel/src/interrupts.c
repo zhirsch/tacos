@@ -77,7 +77,7 @@ void isr_common(int vector, int error_code) {
     handlers[vector](vector, error_code, prev_tss);
   } else {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-    panic0("  unhandled!\n");
+    panic("  unhandled!\n");
   }
 
   // EOI

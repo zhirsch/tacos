@@ -38,6 +38,10 @@ _start:
               //    Reset EFLAGS.
               pushl $0
               popf
+
+              //    Set ebp to a sentinel so that stack tracing can stop.
+              mov   $0, %ebp
+
               //    Call kmain.
               pushl %ebx            // multiboot struct
               pushl %eax            // multiboot magic value

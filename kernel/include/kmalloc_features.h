@@ -44,7 +44,7 @@
 #define malloc_getpagesize PAGESIZE
 
 // Define functions that kmalloc calls.
-#define ABORT                 panic0("kmalloc failed\n");
+#define ABORT                 panic("kmalloc failed\n");
 #define MALLOC_FAILURE_ACTION { } /* Do nothing */
 #define MORECORE              ksbrk
 

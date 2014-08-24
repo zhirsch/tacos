@@ -7,5 +7,5 @@ void init_ssp(void) {
 }
 
 void __attribute__((noreturn)) __stack_chk_fail(void) {
-  panic0("stack smashed!\n");
+  panic("stack smashed!\n");
 }
