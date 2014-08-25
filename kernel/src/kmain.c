@@ -72,10 +72,22 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
+  char cmdline[1024];
+
   init_ssp();
 
   // Clear the screen.
   clearscreen();
+
+  // Copy the command line into a buffer with a valid virtual address.  The boot
+  // loader stores a physical address in mbi->cmdline, which won't be accessible
+  // after init_mmu.
+  strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
+  cmdline[sizeof(cmdline)-1] = '\0';
+
+  // Announce the OS.
+  kprintf("TacOS!\n");
+  kprintf("%s\n", cmdline);
 
   // Initialize the address space.
   init_mmu(mbi);
