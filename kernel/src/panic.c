@@ -11,17 +11,10 @@ void panic(const char* format, ...) {
   va_end(ap);
 
   {
-    uintptr_t eip;
-    uintptr_t* ebp;
-
-    // Get the current eip.
-    __asm__ __volatile__ ("call .L1\n"
-                          ".L1: pop %%eax\n"
-                          "mov %%eax, %0" : "=r" (eip) : : "eax");
-    kprintf("*** PANIC: %08lx", eip);
+    const uintptr_t* ebp = (uintptr_t*)__builtin_frame_address(0);
 
     // Walk the stack frames.
-    __asm__ __volatile__ ("mov %%ebp, %0" : "=r" (ebp));
+    kprintf("*** CALL STACK:");
     while (1) {
       // Subtract 5 from the eip because that's the size of a call instruction.
       kprintf(" %08lx", ebp[1] - 5);
