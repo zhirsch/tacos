@@ -927,6 +927,7 @@ DLMALLOC_EXPORT void* dlrealloc_in_place(void*, size_t);
 */
 DLMALLOC_EXPORT void* dlmemalign(size_t, size_t);
 
+#if 0
 /*
   int posix_memalign(void** pp, size_t alignment, size_t n);
   Allocates a chunk of n bytes, aligned in accord with the alignment
@@ -936,6 +937,7 @@ DLMALLOC_EXPORT void* dlmemalign(size_t, size_t);
   returns ENOMEM if memory cannot be allocated.
 */
 DLMALLOC_EXPORT int dlposix_memalign(void**, size_t, size_t);
+#endif
 
 /*
   valloc(size_t n);

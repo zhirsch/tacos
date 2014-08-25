@@ -1,5 +1,4 @@
-#include <string.h>
-
+#include <stddef.h>
 #include <stdint.h>
 
 void* memset(void* s, int c, size_t n) {
@@ -7,10 +6,6 @@ void* memset(void* s, int c, size_t n) {
     *(((char*)s) + i) = (char)c;
   }
   return s;
-}
-
-void* memcpy(void* dest, const void* src, size_t n) {
-  return memmove(dest, src, n);
 }
 
 void* memmove(void* dest, const void* src, size_t n) {
@@ -26,6 +21,10 @@ void* memmove(void* dest, const void* src, size_t n) {
     }
   }
   return dest;
+}
+
+void* memcpy(void* dest, const void* src, size_t n) {
+  return memmove(dest, src, n);
 }
 
 size_t strlen(const char* s) {

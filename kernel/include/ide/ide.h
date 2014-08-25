@@ -1,8 +1,6 @@
 #ifndef IDE_IDE_H
 #define IDE_IDE_H
 
-#include <stdint.h>
-
 // Initialize IDE devices.  Must be called before any other IDE functions can be
 // called.
 void init_ide(void);

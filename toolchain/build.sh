@@ -11,6 +11,7 @@ ROOT=$(readlink -f $(dirname $0))
 SOURCE=$ROOT/source
 BUILD=$ROOT/build
 PREFIX=$ROOT/install
+KERNEL_TARGET=i686-pc-tacoskernel
 TARGET=i686-pc-tacos
 
 rm -rf $SOURCE
@@ -40,6 +41,30 @@ popd
 mkdir $BUILD
 cd $BUILD
 
+# --- Build once for the kernel.
+# Binutils
+mkdir binutils-kernel
+pushd binutils-kernel
+$SOURCE/binutils-$BINUTILS_VERSION/configure \
+    --target=$KERNEL_TARGET \
+    --prefix=$PREFIX \
+    --disable-nls
+make -j4
+make install-strip
+popd
+# GCC
+mkdir gcc-kernel
+pushd gcc-kernel
+$SOURCE/gcc-$GCC_VERSION/configure \
+    --target=$KERNEL_TARGET \
+    --prefix=$PREFIX \
+    --disable-nls \
+    --enable-languages=c
+make -j4 all-gcc all-target-libgcc
+make install-strip-gcc install-strip-target-libgcc
+popd
+
+# --- Build again for user space.
 # Binutils
 mkdir binutils
 pushd binutils
@@ -50,7 +75,6 @@ $SOURCE/binutils-$BINUTILS_VERSION/configure \
 make -j4
 make install-strip
 popd
-
 # GCC bootstrap
 mkdir gcc
 pushd gcc
@@ -64,7 +88,6 @@ $SOURCE/gcc-$GCC_VERSION/configure \
 make -j4 all-gcc all-target-libgcc
 make install-strip-gcc install-strip-target-libgcc
 popd
-
 # Newlib
 mkdir newlib
 pushd newlib
@@ -75,7 +98,6 @@ PATH=$PATH:$PREFIX/bin $SOURCE/newlib-$NEWLIB_VERSION/configure \
 PATH=$PATH:$PREFIX/bin make -j4
 PATH=$PATH:$PREFIX/bin make install
 popd
-
 # GCC full
 pushd gcc
 $SOURCE/gcc-$GCC_VERSION/configure \

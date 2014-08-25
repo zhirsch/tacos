@@ -33,10 +33,17 @@ diff -Naur gcc-4.9.1.orig/gcc/config/i386/i386tacos.h gcc-4.9.1/gcc/config/i386/
 diff -Naur gcc-4.9.1.orig/gcc/config.gcc gcc-4.9.1/gcc/config.gcc
 --- gcc-4.9.1.orig/gcc/config.gcc	2014-06-16 01:15:35.000000000 -0700
 +++ gcc-4.9.1/gcc/config.gcc	2014-08-11 10:35:51.476410486 -0700
-@@ -867,6 +867,12 @@
+@@ -867,6 +867,19 @@
      *) echo 'Unknown thread configuration for VxWorks'; exit 1 ;;
    esac
    ;;
++*-*-tacoskernel*)
++  gas=yes
++  gnu_ld=yes
++  # Assume that newlib is being used and so __cxa_atexit is provided.
++  default_use_cxa_atexit=yes
++  use_gcc_stdint=provide
++  ;;
 +*-*-tacos*)
 +  gas=yes
 +  gnu_ld=yes

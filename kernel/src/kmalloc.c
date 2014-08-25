@@ -3367,7 +3367,7 @@ void* dlcalloc(size_t n_elements, size_t elem_size) {
   }
   mem = dlmalloc(req);
   if (mem != 0 && calloc_must_clear(mem2chunk(mem)))
-    memset(mem, 0, req);
+    __builtin_memset(mem, 0, req);
   return mem;
 }
 
@@ -3604,7 +3604,7 @@ static void** ialloc(mstate m,
   assert(!is_mmapped(p));
 
   if (opts & 0x2) {       /* optionally clear the elements */
-    memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
+    __builtin_memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
   }
 
   /* If not provided, allocate the pointer array as final part of chunk */
@@ -3786,7 +3786,7 @@ void* dlrealloc(void* oldmem, size_t bytes) {
         mem = internal_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
-          memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
+          __builtin_memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
           internal_free(m, oldmem);
         }
       }
@@ -3833,6 +3833,7 @@ void* dlmemalign(size_t alignment, size_t bytes) {
   return internal_memalign(gm, alignment, bytes);
 }
 
+#if 0
 int dlposix_memalign(void** pp, size_t alignment, size_t bytes) {
   void* mem = 0;
   if (alignment == MALLOC_ALIGNMENT)
@@ -3855,6 +3856,7 @@ int dlposix_memalign(void** pp, size_t alignment, size_t bytes) {
     return 0;
   }
 }
+#endif
 
 void* dlvalloc(size_t bytes) {
   size_t pagesz;

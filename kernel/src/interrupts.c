@@ -1,6 +1,7 @@
 #include "interrupts.h"
 
-#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "dt.h"
 #include "kprintf.h"

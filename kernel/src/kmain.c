@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <string.h>
 
 #include "dt.h"
 #include "ide/ide.h"
@@ -29,7 +28,7 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
     path = kmalloc(size);
     snprintf(path, size, "/%.*s", dirrec[32], dirrec+33);
   } else {
-    const int size = strlen(parent) + 1 + dirrec[32] + 1;
+    const int size = __builtin_strlen(parent) + 1 + dirrec[32] + 1;
     path = kmalloc(size);
     snprintf(path, size, "%s/%.*s", parent, dirrec[32], dirrec+33);
   }
@@ -59,7 +58,7 @@ void iso9660_print_paths(const uint8_t* dirrec, const char* parent) {
       path = kmalloc(size);
       snprintf(path, size, "/%.*s", dirrec[32], dirrec+33);
     } else {
-      const int size = strlen(parent) + 1 + dirrec[32] + 1;
+      const int size = __builtin_strlen(parent) + 1 + dirrec[32] + 1;
       path = kmalloc(size);
       snprintf(path, size, "%s/%.*s", parent, dirrec[32], dirrec+33);
     }
@@ -82,7 +81,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   // Copy the command line into a buffer with a valid virtual address.  The boot
   // loader stores a physical address in mbi->cmdline, which won't be accessible
   // after init_mmu.
-  strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
+  __builtin_strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
   cmdline[sizeof(cmdline)-1] = '\0';
 
   // Announce the OS.
@@ -154,7 +153,7 @@ static void init_kernel_tss(void) {
   //      different task.
   // The exception to this is cr3, because the processor doesn't save it on a
   // task switch.
-  memset(&kernel_tss, 0, sizeof(kernel_tss));
+  __builtin_memset(&kernel_tss, 0, sizeof(kernel_tss));
   __asm__ __volatile__ ("movl %%cr3, %0" : "=r" (kernel_tss.cr3));
 
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");

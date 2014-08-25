@@ -2,6 +2,7 @@
 #define KMALLOC_FEATURES_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "mmu.h"
 #include "panic.h"
@@ -34,8 +35,13 @@
 // The kernel doesn't provide mmap.
 #define HAVE_MMAP 0
 
-// The kernel doesn't provide an implementation of time().
+// The kernel doesn't provide some headers.
+#define LACKS_ERRNO_H
+#define LACKS_STDLIB_H
+#define LACKS_STRING_H
+#define LACKS_SYS_TYPES_H
 #define LACKS_TIME_H
+#define LACKS_UNISTD_H
 
 // Don't provide malloc stats.
 #define NO_MALLOC_STATS 1
