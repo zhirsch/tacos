@@ -145,6 +145,14 @@ void mmu_release_physical_page(void* paddr) {
   *(++paddr_stack) = (uintptr_t)paddr;
 }
 
+void* mmu_get_paddr(const void* vaddr) {
+  const uint32_t pte = PTE(vaddr);
+  if (!(pte & 0x1)) {
+    panic("MMU: mmu_get_paddr(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
+  }
+  return (void*)(pte & 0xfffff000);
+}
+
 void mmu_map_page(void* paddr, void* vaddr, int flags) {
   if (!(PDE(vaddr) & 0x1)) {
     PDE(vaddr) = ((uintptr_t)mmu_acquire_physical_page()) | 0x3;
@@ -197,7 +205,5 @@ void* ksbrk(intptr_t increment) {
 static void page_fault_handler(int vector, int error_code, struct tss* prev_tss) {
   uint32_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
-  // Cause a double fault!
-  *(char*)(0xB0000000) = '\0';
+  panic("Page fault! code=%08x eip=%08lx addr=%08lx\n", error_code, prev_tss->eip, cr2);
 }

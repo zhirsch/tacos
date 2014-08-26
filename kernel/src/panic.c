@@ -19,7 +19,7 @@ void panic(const char* format, ...) {
       // Subtract 5 from the eip because that's the size of a call instruction.
       kprintf(" %08lx", ebp[1] - 5);
       ebp = (uintptr_t*)ebp[0];
-      if (ebp == 0) {
+      if (ebp == 0 || ebp[1] == 0) {
         break;
       }
     }

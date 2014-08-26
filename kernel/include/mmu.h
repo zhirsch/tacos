@@ -17,6 +17,9 @@ void* mmu_acquire_physical_page(void);
 // Release a physical page.
 void mmu_release_physical_page(void* paddr);
 
+// Gets the physical address backing the vaddr.
+void* mmu_get_paddr(const void* vaddr);
+
 // Map a physical address to a virtual address, with flags.
 // Common flags:
 //   0x1 - read-only
