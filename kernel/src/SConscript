@@ -54,6 +54,7 @@ objects += env.SConscript(
 objects += env.Object([
     'dt.c',
     'interrupts.c',
+    'iso9660.c',
     'kmain.c',
     'kmalloc.c',
     'kprintf.c',

@@ -3,4 +3,4 @@ timeout 0
 
 title TacOS
   root (cd)
-  kernel /boot/tacos init=/dummy
+  kernel /boot/tacos init=/DUMMY.;1

@@ -45,3 +45,22 @@ char* strncpy(char* dest, const char* src, size_t n) {
   }
   return dest;
 }
+
+// TODO(zhirsch): Don't implement this recursively.
+char* strstr(const char* haystack, const char* needle) {
+  char* p;
+  if (*needle == '\0') {
+    return (char*)haystack;
+  }
+  if (*haystack == '\0') {
+    return NULL;
+  }
+  if (*haystack != *needle) {
+    return strstr(haystack+1, needle);
+  }
+  p = strstr(haystack+1, needle+1);
+  if (p == NULL) {
+    return strstr(haystack+1, needle);
+  }
+  return (char*)haystack;
+}
