@@ -64,8 +64,8 @@ static void start_init(const char* cmdline) {
   }
   pos += __builtin_strlen(" init=");
   for (size_t i = 0; i < sizeof(initpath) - 1; i++) {
-    initpath[i] = *(pos++);
-    if (*pos == '\0') {
+    initpath[i] = *pos;
+    if (*(pos++) == '\0') {
       break;
     }
   }

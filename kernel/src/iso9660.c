@@ -53,9 +53,22 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       const char* name = (const char*)(p + 33);
       const uint8_t namelen = p[32];
       i += p[0];
-      if (__builtin_strlen(path) < namelen ||
-          __builtin_strstr(name, path) != name) {
+      if (__builtin_strlen(path) < namelen) {
         continue;
+      }
+      {
+        int i;
+        for (i = 0; i < namelen; i++) {
+          if (path[i] == '/' || path[i] == '\0') {
+            break;
+          }
+          if (path[i] != name[i]) {
+            break;
+          }
+        }
+        if (i != namelen) {
+          continue;
+        }
       }
       if (path[namelen] == '\0' && !(p[25] & 0x2)) {
         void* ptr;
