@@ -3,5 +3,6 @@
 
 void clearscreen(void);
 void puts(const char* text);
+void putch(char ch);
 
 #endif /* SCREEN_H */

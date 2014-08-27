@@ -3,4 +3,4 @@ timeout 0
 
 title TacOS
   root (cd)
-  kernel /boot/tacos init=/HELLO.;1
+  kernel /boot/tacos init=/BSS.;1

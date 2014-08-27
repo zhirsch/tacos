@@ -126,9 +126,10 @@ static void prepare_new_process(void* init_vaddr) {
     case PT_NULL:
       break;
     case PT_LOAD: {
-      uintptr_t base_paddr = (uintptr_t)((uint8_t*)ehdr + phdr->p_offset) & 0xfffff000;
-      uintptr_t base_vaddr = phdr->p_vaddr & 0xfffff000;
-      for (uint32_t i = 0; i < phdr->p_filesz; i += PAGESIZE) {
+      const uintptr_t base_paddr = (uintptr_t)((uint8_t*)ehdr + phdr->p_offset) & 0xfffff000;
+      const uintptr_t base_vaddr = phdr->p_vaddr & 0xfffff000;
+      uint32_t i;
+      for (i = 0; i < phdr->p_filesz; i += PAGESIZE) {
         uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)(base_paddr + i));
         uintptr_t vaddr = base_vaddr + i;
         kprintf("ELF: Mapping vaddr %08lx to paddr %08lx\n", vaddr, paddr);
@@ -136,7 +137,12 @@ static void prepare_new_process(void* init_vaddr) {
         // TODO(zhirsch): Duplicate pages that overlap segments.
         mmu_map_page((void*)paddr, (void*)vaddr, 0x3 | 0x4);
       }
-      // TODO(zhirsch): Zero out the BSS.
+      // Allocate additional pages for the BSS.
+      for (uintptr_t vaddr = base_vaddr + i; vaddr < base_vaddr + phdr->p_memsz; vaddr += PAGESIZE) {
+        mmu_map_page(mmu_acquire_physical_page(), (void*)vaddr, 0x3 | 0x4);
+      }
+      // Zero out the BSS.
+      __builtin_memset((void*)(base_vaddr + phdr->p_filesz), 0, phdr->p_memsz - phdr->p_filesz);
       break;
     }
     default:

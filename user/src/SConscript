@@ -22,6 +22,7 @@ env = env.Clone(
 # Compile the sources.
 binaries = env.SConscript(
     dirs = [
+        'bss',
         'dummy',
         'hello',
     ],

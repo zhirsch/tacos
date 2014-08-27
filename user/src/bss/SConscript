@@ -1,0 +1,5 @@
+# -*- mode: python -*-
+Import('env')
+
+bss = env.Program('bss.c')[0]
+Return(['bss'])

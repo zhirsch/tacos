@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
   int ret;
-  ret = puts("Hello, world!\n");
+  ret = fputs("Hello, world!\n", stderr);
   if (ret == -1) {
     return 17;
   }

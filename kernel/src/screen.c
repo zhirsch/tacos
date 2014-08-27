@@ -9,7 +9,6 @@
 static int attrib = 0x07;
 static struct { char x, y; } cursor = { 0, 0 };
 
-static void putch(char ch);
 static void scroll(void);
 
 void clearscreen(void) {
@@ -42,7 +41,7 @@ void puts(const char* text) {
   }
 }
 
-static void putch(char ch) {
+void putch(char ch) {
   if (ch >= ' ') {
     // Write the character to the screen.
     unsigned short* p = VGAMEMBASE + (cursor.y * MAXCOLS + cursor.x);
