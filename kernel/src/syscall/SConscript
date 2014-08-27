@@ -5,6 +5,7 @@ Import('env')
 objects = env.Object([
     '_exit.c',
     'init.c',
+    'write.c',
 ])
 
 Return(['objects'])

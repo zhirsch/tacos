@@ -126,9 +126,17 @@ static void prepare_new_process(void* init_vaddr) {
     case PT_NULL:
       break;
     case PT_LOAD: {
-      void* paddr = mmu_get_paddr(((const char*)ehdr)+phdr->p_offset);
-      kprintf("ELF: Mapping vaddr %08lx to paddr %08lx\n", phdr->p_vaddr, (uintptr_t)paddr);
-      mmu_map_page(paddr, (void*)phdr->p_vaddr, 0x3 | 0x4);
+      uintptr_t base_paddr = (uintptr_t)((uint8_t*)ehdr + phdr->p_offset) & 0xfffff000;
+      uintptr_t base_vaddr = phdr->p_vaddr & 0xfffff000;
+      for (uint32_t i = 0; i < phdr->p_filesz; i += PAGESIZE) {
+        uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)(base_paddr + i));
+        uintptr_t vaddr = base_vaddr + i;
+        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx\n", vaddr, paddr);
+        // TODO(zhirsch): Set the right permissions.
+        // TODO(zhirsch): Duplicate pages that overlap segments.
+        mmu_map_page((void*)paddr, (void*)vaddr, 0x3 | 0x4);
+      }
+      // TODO(zhirsch): Zero out the BSS.
       break;
     }
     default:

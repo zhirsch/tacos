@@ -96,8 +96,8 @@ diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am newlib-2.1.0/newl
 +CONFIG_STATUS_DEPENDENCIES = $(newlib_basedir)/configure.host
 diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c
 --- newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c	1969-12-31 16:00:00.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c	2014-08-26 18:49:08.389443742 -0700
-@@ -0,0 +1,47 @@
++++ newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c	2014-08-27 14:14:02.159080539 -0700
+@@ -0,0 +1,72 @@
 +// TODO
 +
 +#include <stdint.h>
@@ -106,24 +106,49 @@ diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib-2.1.0/newli
 +#include <sys/types.h>
 +#include <unistd.h>
 +
-+#define SYSCALL__EXIT 0x01
++#define SYSCALL__EXIT 0x00
++#define SYSCALL_WRITE 0x01
++
++static inline int exec_syscall(void) {
++  int ret;
++  __asm__ __volatile__ ("int $0xFF" : : : "eax", "memory");
++  __asm__ __volatile__ ("mov %%eax, %0" : "=r" (ret));
++  return ret;
++}
 +
 +void _exit(int status) {
 +  __asm__ __volatile__ ("mov %0, %%eax\n"
 +                        "mov %1, %%ebx\n"
-+                        "int $0xFF"
 +                        :
-+                        : "i" (SYSCALL__EXIT), "m" (status)
-+                        : "eax", "ebx", "memory");
++                        : "i" (SYSCALL__EXIT),
++                          "m" (status)
++                        : "eax",
++                          "ebx");
++  exec_syscall();
++
 +  while (1) { }
 +}
 +
 +void* sbrk(intptr_t increment) {
-+  return NULL;
++  return (void*)-1;
 +}
 +
 +_READ_WRITE_RETURN_TYPE _EXFUN(write, (int fd, const void* buf, size_t count)) {
-+  return -1;
++  int ret;
++  __asm__ __volatile__ ("mov %0, %%eax\n"
++                        "mov %1, %%ebx\n"
++                        "mov %2, %%ecx\n"
++                        "mov %3, %%edx\n"
++                        :
++                        : "i" (SYSCALL_WRITE),
++                          "m" (fd),
++                          "m" (buf),
++                          "m" (count)
++                        : "eax",
++                          "ebx",
++                          "ecx",
++                        "edx");
++  return exec_syscall();
 +}
 +
 +int close(int fd) {

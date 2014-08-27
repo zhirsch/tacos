@@ -314,7 +314,10 @@ int ide_read(int controller, int position, void* buffer, int lba, int nwords) {
   packet[0x6] = 0x0;
   packet[0x7] = 0x0;
   packet[0x8] = 0x0;
-  packet[0x9] = 1;  // number of sectors.
+  packet[0x9] = nwords / 2048;
+  if ((nwords % 2048) > 0) {
+    packet[0x9]++;
+  }
   packet[0xa] = 0x0;
   packet[0xb] = 0x0;
   outb(iobase + ATA_REGISTER_COMMAND, ATA_COMMAND_PACKET);
