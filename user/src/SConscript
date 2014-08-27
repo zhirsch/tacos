@@ -25,6 +25,7 @@ binaries = env.SConscript(
         'bss',
         'dummy',
         'hello',
+        'perm',
     ],
     exports = [
         'env',

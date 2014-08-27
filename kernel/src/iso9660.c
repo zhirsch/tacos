@@ -6,6 +6,7 @@
 #include "ide/ide.h"
 #include "kmalloc.h"
 #include "kprintf.h"
+#include "mmu.h"
 
 #define BUFFER_SIZE 2048
 
@@ -79,7 +80,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
         void* ptr;
         __builtin_memcpy(&extent_pos, p +  2, 4);
         __builtin_memcpy(&extent_len, p + 10, 4);
-        ptr = kmemalign(0x1000, extent_len);
+        ptr = kmemalign(PAGESIZE, extent_len);
         if (ptr == NULL) {
           panic("ISO9660: Unable to allocate memory to load file.\n");
         }

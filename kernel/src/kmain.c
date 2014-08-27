@@ -126,23 +126,38 @@ static void prepare_new_process(void* init_vaddr) {
     case PT_NULL:
       break;
     case PT_LOAD: {
-      const uintptr_t base_paddr = (uintptr_t)((uint8_t*)ehdr + phdr->p_offset) & 0xfffff000;
-      const uintptr_t base_vaddr = phdr->p_vaddr & 0xfffff000;
-      uint32_t i;
-      for (i = 0; i < phdr->p_filesz; i += PAGESIZE) {
-        uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)(base_paddr + i));
-        uintptr_t vaddr = base_vaddr + i;
-        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx\n", vaddr, paddr);
-        // TODO(zhirsch): Set the right permissions.
+      const uintptr_t dst_base = phdr->p_vaddr & 0xfffff000;
+      const uint32_t bss_size = phdr->p_memsz - phdr->p_filesz;
+      uintptr_t src = ((uintptr_t)ehdr + phdr->p_offset) & 0xfffff000;
+      uintptr_t dst = dst_base;
+      uint8_t perm;
+      switch (phdr->p_flags) {
+      case 0x5:
+        perm = 0x1;  // r-x
+        break;
+      case 0x6:
+        perm = 0x3;  // rw-
+        break;
+      default:
+        panic("ELF: Unknown flags: %08lx\n", phdr->p_flags);
+      }
+      while (dst < (phdr->p_vaddr & 0xfffff000) + phdr->p_filesz) {
+        const uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)src);
+        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for %s\n", dst, paddr,
+                (perm == 0x1) ? "TEXT" : "DATA");
         // TODO(zhirsch): Duplicate pages that overlap segments.
-        mmu_map_page((void*)paddr, (void*)vaddr, 0x3 | 0x4);
+        mmu_map_page((void*)paddr, (void*)dst, perm | 0x4);
+        src += PAGESIZE;
+        dst += PAGESIZE;
       }
-      // Allocate additional pages for the BSS.
-      for (uintptr_t vaddr = base_vaddr + i; vaddr < base_vaddr + phdr->p_memsz; vaddr += PAGESIZE) {
-        mmu_map_page(mmu_acquire_physical_page(), (void*)vaddr, 0x3 | 0x4);
+      // Allocate additional pages for the BSS and zero it out.
+      while (dst < (phdr->p_vaddr & 0xfffff000) + phdr->p_memsz) {
+        const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
+        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for BSS\n", dst, paddr);
+        mmu_map_page((void*)paddr, (void*)dst, 0x3 | 0x4);
+        dst += PAGESIZE;
       }
-      // Zero out the BSS.
-      __builtin_memset((void*)(base_vaddr + phdr->p_filesz), 0, phdr->p_memsz - phdr->p_filesz);
+      __builtin_memset((void*)(dst_base + phdr->p_filesz), 0, bss_size);
       break;
     }
     default:

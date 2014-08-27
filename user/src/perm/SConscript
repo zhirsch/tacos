@@ -1,0 +1,5 @@
+# -*- mode: python -*-
+Import('env')
+
+perm = env.Program('perm.c')[0]
+Return(['perm'])
