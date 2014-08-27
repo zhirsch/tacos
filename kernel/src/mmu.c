@@ -23,22 +23,30 @@
 #define PTE(x) (*((uintptr_t*)(0xFFC00000                   + 4 * (((uintptr_t)(x)) / PAGESIZE))))
 
 // Symbols that mark parts of the kernel's address space.
-extern void* kernel_start;
-extern void* kernel_ro_start;
-extern void* kernel_rw_start;
 extern void* kernel_end;
 extern void* kernel_ro_end;
+extern void* kernel_ro_start;
 extern void* kernel_rw_end;
+extern void* kernel_rw_start;
+extern void* kernel_stack_bottom;
+extern void* kernel_stack_bottom_fence;
+extern void* kernel_stack_top;
+extern void* kernel_stack_top_fence;
+extern void* kernel_start;
 extern void* paddr_stack_bottom;
 
 // Physical addresses that correspond to the above symbols.
-static const uintptr_t kernel_start_paddr       = PADDR(&kernel_start);
-static const uintptr_t kernel_ro_start_paddr    = PADDR(&kernel_ro_start);
-static const uintptr_t kernel_rw_start_paddr    = PADDR(&kernel_rw_start);
-static const uintptr_t kernel_end_paddr         = PADDR(&kernel_end);
-static const uintptr_t kernel_ro_end_paddr      = PADDR(&kernel_ro_end);
-static const uintptr_t kernel_rw_end_paddr      = PADDR(&kernel_rw_end);
-static const uintptr_t paddr_stack_bottom_paddr = PADDR(&paddr_stack_bottom);
+static const uintptr_t kernel_end_paddr                = PADDR(&kernel_end);
+static const uintptr_t kernel_ro_end_paddr             = PADDR(&kernel_ro_end);
+static const uintptr_t kernel_ro_start_paddr           = PADDR(&kernel_ro_start);
+static const uintptr_t kernel_rw_end_paddr             = PADDR(&kernel_rw_end);
+static const uintptr_t kernel_rw_start_paddr           = PADDR(&kernel_rw_start);
+static const uintptr_t kernel_stack_bottom_fence_paddr = PADDR(&kernel_stack_bottom_fence);
+static const uintptr_t kernel_stack_bottom_paddr       = PADDR(&kernel_stack_bottom);
+static const uintptr_t kernel_stack_top_fence_paddr    = PADDR(&kernel_stack_top_fence);
+static const uintptr_t kernel_stack_top_paddr          = PADDR(&kernel_stack_top);
+static const uintptr_t kernel_start_paddr              = PADDR(&kernel_start);
+static const uintptr_t paddr_stack_bottom_paddr        = PADDR(&paddr_stack_bottom);
 
 // The stack of physical addresses.  The top of the stack is set once the size
 // of the stack is known in init_mmu.
@@ -121,6 +129,10 @@ static void init_paging(void) {
     const uintptr_t paddr = PAGESIZE * i;
     if (kernel_ro_start_paddr <= paddr && paddr < kernel_ro_end_paddr) {
       *(((uintptr_t*)0xB0000000) + i) = paddr | 0x1;
+    } else if (kernel_stack_bottom_fence_paddr <= paddr && paddr < kernel_stack_bottom_paddr) {
+      *(((uintptr_t*)0xB0000000) + i) = 0;
+    } else if (kernel_stack_top_paddr <= paddr && paddr < kernel_stack_top_fence_paddr) {
+      *(((uintptr_t*)0xB0000000) + i) = 0;
     } else if (kernel_rw_start_paddr <= paddr && paddr < kernel_rw_end_paddr) {
       *(((uintptr_t*)0xB0000000) + i) = paddr | 0x3;
     } else if (paddr_stack_bottom_paddr <= paddr && paddr < paddr_stack_top_paddr) {
@@ -203,7 +215,14 @@ void* ksbrk(intptr_t increment) {
 }
 
 static void page_fault_handler(int vector, int error_code, struct tss* prev_tss) {
-  uint32_t cr2;
+  uintptr_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  panic("Page fault! code=%08x eip=%08lx addr=%08lx\n", error_code, prev_tss->eip, cr2);
+  kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
+  if ((uintptr_t)&kernel_stack_bottom_fence <= cr2 && cr2 < (uintptr_t)&kernel_stack_bottom) {
+    panic("    kernel stack overflow\n");
+  } else if ((uintptr_t)kernel_stack_top <= cr2 && cr2 < (uintptr_t)kernel_stack_top_fence) {
+    panic("    kernel stack underflow\n");
+  } else {
+    panic("    unknown reason\n");
+  }
 }

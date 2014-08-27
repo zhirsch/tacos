@@ -27,10 +27,15 @@ SECTIONS {
         }
         .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000) {
             *(.bss)
+
             . = ALIGN(0x1000);
+            kernel_stack_bottom_fence = .;
+            . += 0x4000;
             kernel_stack_bottom = .;
             . += 0x4000;
             kernel_stack_top    = .;
+            . += 0x4000;
+            kernel_stack_top_fence = .;
         }
         kernel_rw_end = ABSOLUTE(.);
 

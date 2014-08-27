@@ -7,8 +7,11 @@
 #include "kmalloc.h"
 #include "kprintf.h"
 
+#define BUFFER_SIZE 2048
+
 void* iso9660_load_file_from_atapi(int controller, int position, const char* path) {
   uint32_t extent_pos, extent_len;
+  uint8_t* buffer;
 
   if (path[0] != '/') {
     kprintf("ISO9660: Load path %s does not start with a slash\n", path);
@@ -16,11 +19,12 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
   }
 
   // Find the primary volume descriptor.
+  buffer = kmalloc(BUFFER_SIZE);
   while (1) {
-    uint8_t buffer[2048];
     int lba = 0x10;
-    if (!ide_read(controller, position, buffer, lba, sizeof(buffer) / 2)) {
-      kprintf("ISO9660: Read from %d-%d at LBA %x of %lx bytes failed\n", controller, position, lba, sizeof(buffer));
+    if (!ide_read(controller, position, buffer, lba, BUFFER_SIZE / 2)) {
+      kprintf("ISO9660: Read from %d-%d at LBA %x of %x bytes failed\n", controller, position, lba, BUFFER_SIZE);
+      kfree(buffer);
       return NULL;
     }
     if (buffer[0] == 0x1) {
@@ -30,16 +34,17 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       break;
     } else if (buffer[0] == 0xff) {
       kprintf("ISO9660: No primary volume descriptor found on %d-%d\n", controller, position);
+      kfree(buffer);
       return NULL;
     }
   }
 
   while (1) {
     int i = 0;
-    uint8_t buffer[2048];
 
     if (!ide_read(controller, position, buffer, extent_pos, extent_len / 2)) {
       kprintf("ISO9660: Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
+      kfree(buffer);
       return NULL;
     }
 
@@ -81,8 +86,10 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
         if (!ide_read(controller, position, ptr, extent_pos, extent_len / 2)) {
           kprintf("ISO9960: Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
           kfree(ptr);
+          kfree(buffer);
           return NULL;
         }
+        kfree(buffer);
         return ptr;
       }
       if (path[namelen] == '/') {
@@ -94,6 +101,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
     }
     if (buffer[i] == 0) {
       kprintf("SAD FACE!\n");
+      kfree(buffer);
       return NULL;
     }
   }

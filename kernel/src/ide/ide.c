@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "interrupts.h"
+#include "kmalloc.h"
 #include "kprintf.h"
 #include "portio.h"
 #include "tss.h"
@@ -131,7 +132,7 @@ static void fix_string(char* str, int n) {
 
 static void identify_ide_device(struct ide_device* device) {
   const int iobase = device->controller->iobase;
-  uint16_t buffer[256];
+  uint16_t* buffer;
   int status;
 
   device->present = 0;
@@ -178,6 +179,7 @@ static void identify_ide_device(struct ide_device* device) {
   device->present = 1;
 
   // Read the data.
+  buffer = kmalloc(256 * sizeof(*buffer));
   for (int i = 0; i < 256; i++) {
     buffer[i] = inw(iobase + ATA_REGISTER_DATA);
   }
@@ -189,6 +191,8 @@ static void identify_ide_device(struct ide_device* device) {
   fix_string(device->serial, sizeof(device->serial));
   __builtin_memcpy(device->firmware, buffer + 23, sizeof(device->firmware) - 1);
   fix_string(device->firmware, sizeof(device->firmware));
+
+  kfree(buffer);
 }
 
 static void wait_for_irq(struct ide_controller* controller) {

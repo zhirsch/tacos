@@ -24,7 +24,7 @@ static void exec_elf(const void* elf) __attribute__ ((noreturn));
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
-  char cmdline[1024];
+  char cmdline[256];
 
   init_ssp();
 
@@ -57,21 +57,17 @@ void kmain(int magic, multiboot_info_t* mbi) {
 }
 
 static void start_init(const char* cmdline) {
+  char* initpath;
   void* init_vaddr;
 
   // Parse the command line to find the name of the init program.
-  char initpath[1024];
-  char* pos = __builtin_strstr(cmdline, " init=");
-  if (pos == NULL) {
+  // TODO(zhirsch): Allow for init= to be anywhere in the command line, not just
+  // at the end.
+  initpath = __builtin_strstr(cmdline, " init=");
+  if (initpath == NULL) {
     panic("unable to find init=");
   }
-  pos += __builtin_strlen(" init=");
-  for (size_t i = 0; i < sizeof(initpath) - 1; i++) {
-    initpath[i] = *pos;
-    if (*(pos++) == '\0') {
-      break;
-    }
-  }
+  initpath += __builtin_strlen(" init=");
   kprintf("INIT: init program is \"%s\"\n", initpath);
 
   // Load the init program from the CD-ROM at 0-0.

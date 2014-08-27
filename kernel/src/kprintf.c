@@ -13,7 +13,7 @@ void kprintf(const char* format, ...) {
 }
 
 void kvprintf(const char* format, va_list ap) {
-  char s[512];
+  char s[256];
   int c;
   c = vsnprintf(s, sizeof(s) - 1, format, ap);
   s[c] = '\0';

@@ -3,6 +3,6 @@
 
 #include "kprintf.h"
 
-void panic(const char* format, ...) __attribute__ ((noreturn));
+void panic(const char* format, ...) __attribute__ ((noreturn, format(printf, 1, 2)));
 
 #endif /* PANIC_H */
