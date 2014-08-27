@@ -40,7 +40,7 @@ void init_interrupts(void) {
     idt[i].reserved2   = 0;
     idt[i].type        = 0x5;
     idt[i].reserved3   = 0;
-    idt[i].dpl         = 0;
+    idt[i].dpl         = 3;
     idt[i].present     = 1;
     idt[i].reserved4   = 0;
 

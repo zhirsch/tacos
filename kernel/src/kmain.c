@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-#include "elf.h"
 #include "dt.h"
+#include "elf.h"
 #include "ide/ide.h"
 #include "interrupts.h"
 #include "iso9660.h"
@@ -16,6 +16,7 @@
 #include "screen.h"
 #include "snprintf.h"
 #include "ssp.h"
+#include "syscall/init.h"
 #include "tss.h"
 
 static void init_kernel_tss(void);
@@ -47,6 +48,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   // Enable interrupts.
   init_interrupts();
   init_pic(0x20, 0x28);
+  init_syscalls();
   __asm__ __volatile__ ("sti");
 
   // Initialize IDE.

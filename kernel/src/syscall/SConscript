@@ -1,0 +1,10 @@
+# -*- mode: python -*-
+Import('env')
+
+# Compile the sources.
+objects = env.Object([
+    '_exit.c',
+    'init.c',
+])
+
+Return(['objects'])

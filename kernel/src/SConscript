@@ -47,6 +47,7 @@ objects, boot = env.SConscript(dirs = 'asm', exports = 'env')
 objects += env.SConscript(
     dirs = [
         'ide',
+        'syscall',
     ],
     exports = [
         'env',

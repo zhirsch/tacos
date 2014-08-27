@@ -1,6 +1,6 @@
-diff -Naur ../source.1/newlib-2.1.0.orig/config.sub newlib-2.1.0/config.sub
---- ../source.1/newlib-2.1.0.orig/config.sub	2013-04-29 08:13:53.000000000 -0700
-+++ newlib-2.1.0/config.sub	2014-08-11 10:35:52.136423974 -0700
+diff -Naur newlib-2.1.0.orig/config.sub newlib-2.1.0/config.sub
+--- newlib-2.1.0.orig/config.sub	2013-04-29 08:13:53.000000000 -0700
++++ newlib-2.1.0/config.sub	2014-08-24 20:38:51.723174832 -0700
 @@ -2,7 +2,7 @@
  # Configuration validation subroutine script.
  #   Copyright 1992-2013 Free Software Foundation, Inc.
@@ -18,9 +18,9 @@ diff -Naur ../source.1/newlib-2.1.0.orig/config.sub newlib-2.1.0/config.sub
  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/configure.host newlib-2.1.0/newlib/configure.host
---- ../source.1/newlib-2.1.0.orig/newlib/configure.host	2013-12-20 02:27:49.000000000 -0800
-+++ newlib-2.1.0/newlib/configure.host	2014-08-11 10:35:52.136423974 -0700
+diff -Naur newlib-2.1.0.orig/newlib/configure.host newlib-2.1.0/newlib/configure.host
+--- newlib-2.1.0.orig/newlib/configure.host	2013-12-20 02:27:49.000000000 -0800
++++ newlib-2.1.0/newlib/configure.host	2014-08-24 20:38:51.723174832 -0700
 @@ -468,6 +468,10 @@
  	##newlib_cflags="${newlib_cflags} -idirafter ${gcc_dir}include"
  	;;
@@ -32,9 +32,9 @@ diff -Naur ../source.1/newlib-2.1.0.orig/newlib/configure.host newlib-2.1.0/newl
    m68hc11-*-*|m6811-*-*|m6812-*-*|m68hc12-*-*)
  	;;
  
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/configure.in newlib-2.1.0/newlib/libc/sys/configure.in
---- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/configure.in	2012-02-21 14:34:31.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/configure.in	2014-08-11 10:35:52.136423974 -0700
+diff -Naur newlib-2.1.0.orig/newlib/libc/sys/configure.in newlib-2.1.0/newlib/libc/sys/configure.in
+--- newlib-2.1.0.orig/newlib/libc/sys/configure.in	2012-02-21 14:34:31.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/configure.in	2014-08-24 20:38:51.723174832 -0700
 @@ -46,6 +46,7 @@
  	sysvnecv70) AC_CONFIG_SUBDIRS(sysvnecv70) ;;
  	tic80) AC_CONFIG_SUBDIRS(tic80) ;;
@@ -43,9 +43,9 @@ diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/configure.in newlib-2.1
  	z8ksim) AC_CONFIG_SUBDIRS(z8ksim) ;;
    esac;
  fi
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in newlib-2.1.0/newlib/libc/sys/tacos/configure.in
---- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in	1969-12-31 16:00:00.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/tacos/configure.in	2014-08-11 10:35:52.136423974 -0700
+diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in newlib-2.1.0/newlib/libc/sys/tacos/configure.in
+--- newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/configure.in	2014-08-24 20:38:51.723174832 -0700
 @@ -0,0 +1,7 @@
 +AC_PREREQ(2.59)
 +AC_INIT([newlib], [NEWLIB_VERSION])
@@ -54,19 +54,20 @@ diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/configure.in newl
 +NEWLIB_CONFIGURE(../../..)
 +AC_CONFIG_FILES([Makefile])
 +AC_OUTPUT
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S newlib-2.1.0/newlib/libc/sys/tacos/crt0.S
---- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S	1969-12-31 16:00:00.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/tacos/crt0.S	2014-08-11 10:35:52.136423974 -0700
-@@ -0,0 +1,6 @@
+diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S newlib-2.1.0/newlib/libc/sys/tacos/crt0.S
+--- newlib-2.1.0.orig/newlib/libc/sys/tacos/crt0.S	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/crt0.S	2014-08-27 00:03:01.079736982 -0700
+@@ -0,0 +1,7 @@
 +              .global _start
 +_start:
 +              call  main
++              push  %eax
 +              call  exit
 +1:            hlt
 +              jmp   1b
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am
---- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am	1969-12-31 16:00:00.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am	2014-08-11 10:35:52.136423974 -0700
+diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am
+--- newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/Makefile.am	2014-08-24 20:38:51.727174789 -0700
 @@ -0,0 +1,25 @@
 +#AUTOMAKE_OPTIONS = cygnus
 +INCLUDES = $(NEWLIB_CFLAGS) $(CROSS_CFLAGS) $(TARGET_CFLAGS)
@@ -93,10 +94,10 @@ diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/Makefile.am newli
 +
 +ACLOCAL_AMFLAGS = -I ../../..
 +CONFIG_STATUS_DEPENDENCIES = $(newlib_basedir)/configure.host
-diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c
---- ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c	1969-12-31 16:00:00.000000000 -0800
-+++ newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c	2014-08-11 11:03:05.869787031 -0700
-@@ -0,0 +1,39 @@
+diff -Naur newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c
+--- newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c	1969-12-31 16:00:00.000000000 -0800
++++ newlib-2.1.0/newlib/libc/sys/tacos/syscalls.c	2014-08-26 18:49:08.389443742 -0700
+@@ -0,0 +1,47 @@
 +// TODO
 +
 +#include <stdint.h>
@@ -105,7 +106,15 @@ diff -Naur ../source.1/newlib-2.1.0.orig/newlib/libc/sys/tacos/syscalls.c newlib
 +#include <sys/types.h>
 +#include <unistd.h>
 +
++#define SYSCALL__EXIT 0x01
++
 +void _exit(int status) {
++  __asm__ __volatile__ ("mov %0, %%eax\n"
++                        "mov %1, %%ebx\n"
++                        "int $0xFF"
++                        :
++                        : "i" (SYSCALL__EXIT), "m" (status)
++                        : "eax", "ebx", "memory");
 +  while (1) { }
 +}
 +
