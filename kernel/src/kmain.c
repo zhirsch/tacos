@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "elf.h"
 #include "dt.h"
 #include "ide/ide.h"
 #include "interrupts.h"
@@ -55,13 +56,6 @@ void kmain(int magic, multiboot_info_t* mbi) {
   start_init(cmdline);
 }
 
-static void prepare_new_process(void* init_vaddr) {
-  // TODO(zhirsch): Parse the ELF structure, map the pages into the right
-  // locations, and pass the entry point to switch_to_ring3.
-  switch_to_ring3();
-  panic("TODO: start the init program!\n");
-}
-
 static void start_init(const char* cmdline) {
   void* init_vaddr;
 
@@ -91,6 +85,64 @@ static void start_init(const char* cmdline) {
   exec_elf(init_vaddr);
 }
 
+static void prepare_new_process(void* init_vaddr) {
+  struct Elf32_Ehdr* ehdr;
+  struct Elf32_Phdr* phdr;
+
+  // Parse the elf header.
+  ehdr = (struct Elf32_Ehdr*)init_vaddr;
+  if (ehdr->e_ident[0] != EI_MAG0 ||
+      ehdr->e_ident[1] != EI_MAG1 ||
+      ehdr->e_ident[2] != EI_MAG2 ||
+      ehdr->e_ident[3] != EI_MAG3) {
+    panic("ELF: bad magic\n");
+  }
+  if (ehdr->e_ident[4] != ELFCLASS32) {
+    panic("ELF: not ELFCLASS32\n");
+  }
+  if (ehdr->e_ident[5] != ELFDATA2LSB) {
+    panic("ELF: not ELFDATA2LSB\n");
+  }
+  if (ehdr->e_ident[6] != EV_CURRENT) {
+    panic("ELF: not EV_CURRENT\n");
+  }
+  if (ehdr->e_type != ET_EXEC) {
+    panic("ELF: not ET_EXEC\n");
+  }
+  if (ehdr->e_machine != EM_386) {
+    panic("ELF: not EM_386\n");
+  }
+  if (ehdr->e_version != EV_CURRENT) {
+    panic("ELF: not EV_CURRENT\n");
+  }
+  if (ehdr->e_phoff == 0) {
+    panic("ELF: no program header table\n");
+  }
+
+  kprintf("ELF: entry point: %08lx\n", ehdr->e_entry);
+
+  // Process each of the program headers.
+  phdr = (struct Elf32_Phdr*)(((uint8_t*)init_vaddr) + ehdr->e_phoff);
+  for (int i = 0; i < ehdr->e_phnum; i++) {
+    switch (phdr->p_type) {
+    case PT_NULL:
+      break;
+    case PT_LOAD: {
+      void* paddr = mmu_get_paddr(((const char*)ehdr)+phdr->p_offset);
+      kprintf("ELF: Mapping vaddr %08lx to paddr %08lx\n", phdr->p_vaddr, (uintptr_t)paddr);
+      mmu_map_page(paddr, (void*)phdr->p_vaddr, 0x3 | 0x4);
+      break;
+    }
+    default:
+      panic("ELF: unhandled program header type %lx\n", phdr->p_type);
+    }
+    phdr++;
+  }
+
+  // Switch to the new process in ring 3.
+  switch_to_ring3((void*)ehdr->e_entry);
+}
+
 static void exec_elf(const void* elf) {
   uintptr_t* new_pagedir;
   uintptr_t* new_stack;
@@ -101,19 +153,21 @@ static void exec_elf(const void* elf) {
   new_pagedir = kmemalign(PAGESIZE, sizeof(uintptr_t)*1024);
   // Copy the page directory entries from the current address space.
   __builtin_memcpy(new_pagedir, (const void*)0xfffff000, sizeof(*new_pagedir)*1024);
+  // Map the new page directory as the last 4 MiB.
+  new_pagedir[1023] = ((uintptr_t)mmu_get_paddr(new_pagedir)) | 0x7;
 
   // Create the new program's stack.
-  new_stack = kmemalign(PAGESIZE, 0x4000);
-  // Set the first argument on the stack to the location of the elf bytes.  The
-  // first element in the stack is supposed to be the return address, so set the
-  // location as the second element.
-  new_stack[1] = (uintptr_t)elf;
+  // TODO(zhirsch): Don't use kmalloc to create the stack. Create guard pages.
+  new_stack = kmemalign(PAGESIZE, sizeof(*new_stack) * 0x400);
+  mmu_map_page(mmu_unmap_page(new_stack), new_stack, 0x7);
+  new_stack[0x400] = (uintptr_t)elf;
 
   // Create the new program's TSS.
   new_tss = kmemalign(PAGESIZE, sizeof(struct tss));
   __builtin_memset(new_tss, 0, sizeof(*new_tss));
   new_tss->eip    = (unsigned int)prepare_new_process;
-  new_tss->esp    = (unsigned int)new_stack;
+  new_tss->esp    = (unsigned int)(new_stack + 0x400 - 1);
+  new_tss->eax    = (unsigned int)elf;
   new_tss->cr3    = (unsigned int)mmu_get_paddr(new_pagedir);
   new_tss->eflags = 0x0200;  // Interrupts are enabled.
   // Selectors with RPL=0 for now, switch_to_ring3 will be called later.

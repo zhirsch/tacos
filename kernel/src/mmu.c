@@ -155,7 +155,7 @@ void* mmu_get_paddr(const void* vaddr) {
 
 void mmu_map_page(void* paddr, void* vaddr, int flags) {
   if (!(PDE(vaddr) & 0x1)) {
-    PDE(vaddr) = ((uintptr_t)mmu_acquire_physical_page()) | 0x3;
+    PDE(vaddr) = ((uintptr_t)mmu_acquire_physical_page()) | 0x7;
     invlpg(vaddr);
   }
   PTE(vaddr) = ((uintptr_t)paddr) | (flags & 0xFFF) | 0x1;

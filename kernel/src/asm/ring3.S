@@ -1,6 +1,9 @@
               .text
               .global switch_to_ring3
 switch_to_ring3:
+              push  %ebp
+              mov   %esp, %ebp
+
               //    Switch to ring3.  This is done by using iret to "trick" the
               //    processor into thinking that this is returning to a location
               //    in ring3.
@@ -37,11 +40,8 @@ switch_to_ring3:
 
               // Push %cs and %eip onto the stack for ring3.
               push  $0x1b
-              lea 1f, %eax
+              mov   0x8(%ebp), %eax
               push %eax
 
               // Call iret and return to the caller.
               iret
-1:
-              add $4, %esp
-              ret
