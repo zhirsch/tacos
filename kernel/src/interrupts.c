@@ -18,6 +18,41 @@ extern void (*(isr_array[]))(void);
 
 static void timer_handler(int vector, int error_code, struct tss* prev_tss) { }
 
+static const char* exceptions[32] = {
+  "#DE",  //  0
+  "#DB",  //  1
+  NULL,   //  2
+  "#BP",  //  3
+  "#OF",  //  4
+  "#BR",  //  5
+  "#UD",  //  6
+  "#NM",  //  7
+  "#DF",  //  8
+  NULL,   //  9
+  "#TS",  //  a
+  "#NP",  //  b
+  "#SS",  //  c
+  "#GP",  //  d
+  "#PF",  //  e
+  "#MF",  //  f
+  "#AC",  // 10
+  "#MC",  // 11
+  "#XM",  // 12
+  "#VE",  // 13
+  NULL,   // 14
+  NULL,   // 15
+  NULL,   // 16
+  NULL,   // 17
+  NULL,   // 18
+  NULL,   // 19
+  NULL,   // 1a
+  NULL,   // 1b
+  NULL,   // 1c
+  NULL,   // 1d
+  NULL,   // 1e
+  NULL,   // 1f
+};
+
 void init_interrupts(void) {
   for (int i = 0; i < 256; i++) {
     // Add the TSS descriptor to the GDT.
@@ -78,7 +113,8 @@ void isr_common(int vector, int error_code) {
     handlers[vector](vector, error_code, prev_tss);
   } else {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-    panic("  unhandled!\n");
+    print_call_stack(prev_tss->ebp);
+    panic("  unhandled (%s)!\n", (exceptions[vector] == NULL) ? "?" : exceptions[vector]);
   }
 
   // EOI
