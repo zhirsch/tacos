@@ -9,16 +9,19 @@ void panic(const char* format, ...) {
   kprintf("*** PANIC: ");
   kvprintf(format, ap);
   va_end(ap);
-  print_call_stack((uint32_t)__builtin_frame_address(0));
+  print_call_stack(0, (uint32_t)__builtin_frame_address(0));
   __asm__ __volatile__ ("cli; hlt");
   while (1) { }
 }
 
-void print_call_stack(uint32_t ebp) {
+void print_call_stack(uint32_t eip, uint32_t ebp) {
   const uintptr_t* pebp = (uintptr_t*)ebp;
 
   // Walk the stack frames.
   kprintf("*** CALL STACK:");
+  if (eip != 0) {
+    kprintf(" %08lx", eip);
+  }
   while (1) {
     // Subtract 5 from the eip because that's the size of a call instruction.
     kprintf(" %08lx", pebp[1] - 5);

@@ -113,7 +113,7 @@ void isr_common(int vector, int error_code) {
     handlers[vector](vector, error_code, prev_tss);
   } else {
     kprintf("Interrupt! vector=%02x code=%08x eip=%08x\n", vector, error_code, prev_tss->eip);
-    print_call_stack(prev_tss->ebp);
+    print_call_stack(prev_tss->eip, prev_tss->ebp);
     panic("  unhandled (%s)!\n", (exceptions[vector] == NULL) ? "?" : exceptions[vector]);
   }
 

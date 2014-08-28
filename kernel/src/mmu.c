@@ -218,7 +218,7 @@ static void page_fault_handler(int vector, int error_code, struct tss* prev_tss)
   uintptr_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
   kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
-  print_call_stack(prev_tss->ebp);
+  print_call_stack(prev_tss->eip, prev_tss->ebp);
   if ((uintptr_t)&kernel_stack_bottom_fence <= cr2 && cr2 < (uintptr_t)&kernel_stack_bottom) {
     panic("    kernel stack overflow\n");
   } else if ((uintptr_t)kernel_stack_top <= cr2 && cr2 < (uintptr_t)kernel_stack_top_fence) {
