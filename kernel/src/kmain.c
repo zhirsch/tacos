@@ -126,8 +126,9 @@ static void prepare_new_process(void* init_vaddr) {
     case PT_NULL:
       break;
     case PT_LOAD: {
-      const uintptr_t dst_base = phdr->p_vaddr & 0xfffff000;
+      const uint32_t bss_base = phdr->p_vaddr + phdr->p_filesz;
       const uint32_t bss_size = phdr->p_memsz - phdr->p_filesz;
+      const uintptr_t dst_base = phdr->p_vaddr & 0xfffff000;
       uintptr_t src = ((uintptr_t)ehdr + phdr->p_offset) & 0xfffff000;
       uintptr_t dst = dst_base;
       uint8_t perm;
@@ -157,7 +158,10 @@ static void prepare_new_process(void* init_vaddr) {
         mmu_map_page((void*)paddr, (void*)dst, 0x3 | 0x4);
         dst += PAGESIZE;
       }
-      __builtin_memset((void*)(dst_base + phdr->p_filesz), 0, bss_size);
+      if (bss_size > 0) {
+        kprintf("ELF: Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
+        __builtin_memset((void*)bss_base, 0, bss_size);
+      }
       break;
     }
     default:
@@ -172,7 +176,7 @@ static void prepare_new_process(void* init_vaddr) {
 
 static void exec_elf(const void* elf) {
   uintptr_t* new_pagedir;
-  uintptr_t* new_stack;
+  uint8_t* new_stack;
   struct tss* new_tss;
   unsigned int sel[2];
 
@@ -185,15 +189,19 @@ static void exec_elf(const void* elf) {
 
   // Create the new program's stack.
   // TODO(zhirsch): Don't use kmalloc to create the stack. Create guard pages.
-  new_stack = kmemalign(PAGESIZE, sizeof(*new_stack) * 0x400);
-  mmu_map_page(mmu_unmap_page(new_stack), new_stack, 0x7);
-  new_stack[0x400] = (uintptr_t)elf;
+  new_stack = kmemalign(PAGESIZE, 0x4000);
+  kprintf("Stack is at %08lx\n", (uintptr_t)new_stack);
+  mmu_map_page(mmu_unmap_page(new_stack+0x0000), new_stack+0x0000, 0x7);
+  mmu_map_page(mmu_unmap_page(new_stack+0x1000), new_stack+0x1000, 0x7);
+  mmu_map_page(mmu_unmap_page(new_stack+0x2000), new_stack+0x2000, 0x7);
+  mmu_map_page(mmu_unmap_page(new_stack+0x3000), new_stack+0x3000, 0x7);
+  ((uintptr_t*)new_stack)[0x1000 - 1] = (uintptr_t)elf;
 
   // Create the new program's TSS.
   new_tss = kmemalign(PAGESIZE, sizeof(struct tss));
   __builtin_memset(new_tss, 0, sizeof(*new_tss));
   new_tss->eip    = (unsigned int)prepare_new_process;
-  new_tss->esp    = (unsigned int)(new_stack + 0x400 - 1);
+  new_tss->esp    = (unsigned int)(new_stack + 0x4000 - 8);
   new_tss->eax    = (unsigned int)elf;
   new_tss->cr3    = (unsigned int)mmu_get_paddr(new_pagedir);
   new_tss->eflags = 0x0200;  // Interrupts are enabled.
