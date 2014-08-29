@@ -24,13 +24,8 @@ gdt:
               .long 0x0000FFFF
               .long 0x00CFF300
 
-              //    TSS for kernel
+              //    TSS for active process.
               .skip 8, 0
-              //    TSS for user
-              .skip 8, 0
-
-              //    TSS for interrupts
-              .skip 256 * 8, 0
 
               .global gdtp
 gdtp:

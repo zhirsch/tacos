@@ -1,8 +1,8 @@
 #ifndef SYSCALL_WRITE_H
 #define SYSCALL_WRITE_H
 
-#include "tss.h"
+#include "interrupts.h"
 
-void syscall_write(struct tss* prev_tss);
+void syscall_write(struct isr_frame* frame);
 
 #endif /* SYSCALL_WRITE_H */

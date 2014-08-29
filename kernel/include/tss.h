@@ -1,8 +1,6 @@
 #ifndef TSS_H
 #define TSS_H
 
-struct gdt;
-
 struct tss {
   unsigned int prev_task_link : 16;
   unsigned int reserved0      : 16;
@@ -44,11 +42,5 @@ struct tss {
   unsigned int reserved11     : 15;
   unsigned int io_map_base    : 16;
 }  __attribute__ ((packed));
-
-void init_tss(void);
-
-struct tss* get_tss(void);
-struct tss* get_prev_tss(void);
-struct tss* gdt_to_tss(struct gdt* e);
 
 #endif /* TSS_H */

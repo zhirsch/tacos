@@ -6,7 +6,6 @@
 #include "kmalloc.h"
 #include "kprintf.h"
 #include "portio.h"
-#include "tss.h"
 
 #define NUM_CONTROLLERS 2
 #define NUM_DEVICES_PER_CONTROLLER 2
@@ -202,11 +201,11 @@ static void wait_for_irq(struct ide_controller* controller) {
   controller->irq_signal = 0;
 }
 
-static void primary_controller_handler(int vector, int error_code, struct tss* prev_tss) {
+static void primary_controller_handler(struct isr_frame* frame) {
   controllers[0].irq_signal = 1;
 }
 
-static void secondary_controller_handler(int vector, int error_code, struct tss* prev_tss) {
+static void secondary_controller_handler(struct isr_frame* frame) {
   controllers[1].irq_signal = 1;
 }
 

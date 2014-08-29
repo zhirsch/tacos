@@ -6,7 +6,6 @@
 #include "kprintf.h"
 #include "multiboot.h"
 #include "panic.h"
-#include "tss.h"
 
 // The sentinel that marks the bottom of the paddr stack.
 #define PADDR_STACK_SENTINEL 0xDEADBEEF
@@ -54,7 +53,7 @@ static uintptr_t  paddr_stack_top_paddr;
 static uintptr_t* paddr_stack = (uintptr_t*)&paddr_stack_bottom;
 
 // The page fault handler.
-static void page_fault_handler(int vector, int error_code, struct tss* prev_tss);
+static void page_fault_handler(struct isr_frame* frame);
 
 static inline void invlpg(void* vaddr) {
   __asm__ __volatile__ ("invlpg %0" : : "m" (*(const char*)vaddr) : "memory");
@@ -214,11 +213,11 @@ void* ksbrk(intptr_t increment) {
   return vaddr;
 }
 
-static void page_fault_handler(int vector, int error_code, struct tss* prev_tss) {
+static void page_fault_handler(struct isr_frame* frame) {
   uintptr_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("Page fault! code=%08x eip=%08x addr=%08lx\n", error_code, prev_tss->eip, cr2);
-  print_call_stack(prev_tss->eip, prev_tss->ebp);
+  kprintf("Page fault! code=%08x eip=%08lx addr=%08lx\n", frame->error_code, frame->eip, cr2);
+  print_call_stack(frame->eip, frame->ebp);
   if ((uintptr_t)&kernel_stack_bottom_fence <= cr2 && cr2 < (uintptr_t)&kernel_stack_bottom) {
     panic("    kernel stack overflow\n");
   } else if ((uintptr_t)&kernel_stack_top <= cr2 && cr2 < (uintptr_t)&kernel_stack_top_fence) {

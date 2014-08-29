@@ -20,16 +20,13 @@ extern struct gdt {
 
 // The interrupt descriptor table.
 extern struct __attribute__ ((packed)) {
-  unsigned int reserved1 : 16;
+  unsigned int offset_lo : 16;
   unsigned int selector  : 16;
-  unsigned int reserved2 :  8;
-  unsigned int type      :  4;
-  unsigned int reserved3 :  1;
+  unsigned int reserved  :  8;
+  unsigned int type      :  5;
   unsigned int dpl       :  2;
   unsigned int present   :  1;
-  unsigned int reserved4 : 16;
+  unsigned int offset_hi : 16;
 } idt[];
-
-struct gdt* get_gdt_entry(uint16_t selector);
 
 #endif /* DT_H */

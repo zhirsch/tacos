@@ -1,22 +1,27 @@
+              .text
+prepare_isr_common:
+              pusha
+              push  %esp            // Push the address of the isr_frame.
+              call  isr_common
+              add   $0x4, %esp      // Pop the address of the isr_frame.
+              popa
+              add   $0x8, %esp      // Pop vector and error code.
+              iret
+
               .macro define_isr n
 isr_\()\n\():
-              push  $0x\n           // Push the vector.
-              call  isr_common
-              add   $0x4, %esp      // Pop the vector.
-              iret
-              jmp   isr_\()\n\()
+              push  $0x0            // Push error code.
+              push  $0x\n           // Push vector.
+              jmp   prepare_isr_common
               .endm
 
               .macro define_isr_with_error_code n
 isr_\()\n\():
-              push  $0x\n           // Push the vector.
-              call  isr_common
-              add   $0x8, %esp      // Pop the vector and error code.
-              iret
-              jmp   isr_\()\n\()
+              // Error code is pushed by CPU.
+              push  $0x\n           // Push vector.
+              jmp   prepare_isr_common
               .endm
 
-              .text
               define_isr 00
               define_isr 01
               define_isr 02
