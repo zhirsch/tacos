@@ -1,8 +1,10 @@
 #include "mmu.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "interrupts.h"
+#include "kmalloc.h"
 #include "kprintf.h"
 #include "multiboot.h"
 #include "panic.h"
@@ -169,7 +171,7 @@ void mmu_map_page(void* paddr, void* vaddr, int flags) {
     PDE(vaddr) = ((uintptr_t)mmu_acquire_physical_page()) | 0x7;
     invlpg(vaddr);
   }
-  PTE(vaddr) = ((uintptr_t)paddr) | (flags & 0xFFF) | 0x1;
+  PTE(vaddr) = ((uintptr_t)paddr) | (flags & 0xFFF);
   invlpg(vaddr);
 }
 
@@ -184,6 +186,27 @@ void* mmu_unmap_page(void* vaddr) {
   invlpg(vaddr);
   // TODO(zhirsch): Free the page containing the PTEs if they're all unmapped?
   return paddr;
+}
+
+void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages) {
+  uintptr_t vaddr = (uintptr_t)base_vaddr;
+  // Unmap the leading fence.
+  for (int i = 0; i < fence_pages; i++) {
+    mmu_map_page(NULL, (void*)vaddr, 0x0);
+    vaddr += PAGESIZE;
+  }
+  // Map the actual stack to physical pages.
+  for (int i = 0; i < pages; i++) {
+    uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
+    mmu_map_page((void*)paddr, (void*)vaddr, 0x1 | 0x2 | 0x4);
+    vaddr += PAGESIZE;
+  }
+  // Unmap the trailing fence.
+  for (int i = 0; i < fence_pages; i++) {
+    mmu_map_page(NULL, (void*)vaddr, 0x0);
+    vaddr += PAGESIZE;
+  }
+  return (void*)((uintptr_t)base_vaddr + (fence_pages + pages) * PAGESIZE);
 }
 
 static uintptr_t heap_end_vaddr = 0xE0000000;

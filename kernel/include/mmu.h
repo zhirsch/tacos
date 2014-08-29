@@ -30,6 +30,11 @@ void mmu_map_page(void* paddr, void* vaddr, int flags);
 // address of the physical page that was mapped.
 void* mmu_unmap_page(void* vaddr);
 
+// Create a new stack.  The stack itself is protected by fence_pages on both the
+// top and the bottom.  The return address is the top of the stack (the highest
+// mapped address).
+void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages);
+
 // Kernel's implemnetation of sbrk.
 void* ksbrk(intptr_t increment);
 

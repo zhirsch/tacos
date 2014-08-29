@@ -20,7 +20,7 @@
 #include "syscall/init.h"
 #include "tss.h"
 
-static void init_kernel_tss(void);
+static void init_tss(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
 static void exec_elf(const void* elf) __attribute__ ((noreturn));
 
@@ -44,7 +44,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
 
   // Initialize the address space.
   init_mmu(mbi);
-  init_kernel_tss();
+  init_tss();
 
   // Initialize the FPU.
   init_fpu();
@@ -87,44 +87,45 @@ static void start_init(const char* cmdline) {
   exec_elf(init_vaddr);
 }
 
-static void prepare_new_process(void* init_vaddr) {
+static void exec_elf(const void* elf) {
+  uintptr_t* new_stack;
   struct Elf32_Ehdr* ehdr;
   struct Elf32_Phdr* phdr;
 
   // Parse the elf header.
-  ehdr = (struct Elf32_Ehdr*)init_vaddr;
+  ehdr = (struct Elf32_Ehdr*)elf;
   if (ehdr->e_ident[0] != EI_MAG0 ||
       ehdr->e_ident[1] != EI_MAG1 ||
       ehdr->e_ident[2] != EI_MAG2 ||
       ehdr->e_ident[3] != EI_MAG3) {
-    panic("ELF: bad magic\n");
+    panic("ELF: Bad magic\n");
   }
   if (ehdr->e_ident[4] != ELFCLASS32) {
-    panic("ELF: not ELFCLASS32\n");
+    panic("ELF: Not ELFCLASS32\n");
   }
   if (ehdr->e_ident[5] != ELFDATA2LSB) {
-    panic("ELF: not ELFDATA2LSB\n");
+    panic("ELF: Not ELFDATA2LSB\n");
   }
   if (ehdr->e_ident[6] != EV_CURRENT) {
-    panic("ELF: not EV_CURRENT\n");
+    panic("ELF: Not EV_CURRENT\n");
   }
   if (ehdr->e_type != ET_EXEC) {
-    panic("ELF: not ET_EXEC\n");
+    panic("ELF: Not ET_EXEC\n");
   }
   if (ehdr->e_machine != EM_386) {
-    panic("ELF: not EM_386\n");
+    panic("ELF: Not EM_386\n");
   }
   if (ehdr->e_version != EV_CURRENT) {
-    panic("ELF: not EV_CURRENT\n");
+    panic("ELF: Not EV_CURRENT\n");
   }
   if (ehdr->e_phoff == 0) {
-    panic("ELF: no program header table\n");
+    panic("ELF: No program header table\n");
   }
 
-  kprintf("ELF: entry point: %08lx\n", ehdr->e_entry);
+  kprintf("ELF: Entry point: %08lx\n", ehdr->e_entry);
 
   // Process each of the program headers.
-  phdr = (struct Elf32_Phdr*)(((uint8_t*)init_vaddr) + ehdr->e_phoff);
+  phdr = (struct Elf32_Phdr*)(((uint8_t*)elf) + ehdr->e_phoff);
   for (int i = 0; i < ehdr->e_phnum; i++) {
     switch (phdr->p_type) {
     case PT_NULL:
@@ -174,97 +175,34 @@ static void prepare_new_process(void* init_vaddr) {
     phdr++;
   }
 
-  // Reset the FPU to an initial state.
-  fpu_reset();
+  // Create the new program's stack.
+  new_stack = mmu_new_stack((void*)0xBF400000, 16, 1);
+  kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_stack);
 
   // Switch to the new process in ring 3.
-  switch_to_ring3((void*)ehdr->e_entry);
+  switch_to_ring3((const void*)ehdr->e_entry, new_stack);
 }
 
-static void exec_elf(const void* elf) {
-  uintptr_t* new_pagedir;
-  uint8_t* new_stack;
-  struct tss* new_tss;
-  unsigned int sel[2];
+static void init_tss(void) {
+  static struct tss tss __attribute__ ((aligned(0x1000)));
+  extern void* kernel_stack_top;
 
-  // Create the new program's page directory.
-  new_pagedir = kmemalign(PAGESIZE, sizeof(uintptr_t)*1024);
-  // Copy the page directory entries from the current address space.
-  __builtin_memcpy(new_pagedir, (const void*)0xfffff000, sizeof(*new_pagedir)*1024);
-  // Map the new page directory as the last 4 MiB.
-  new_pagedir[1023] = ((uintptr_t)mmu_get_paddr(new_pagedir)) | 0x7;
-
-  // Create the new program's stack.
-  // TODO(zhirsch): Don't use kmalloc to create the stack. Create guard pages.
-  new_stack = kmemalign(PAGESIZE, 0x4000);
-  kprintf("Stack is at %08lx\n", (uintptr_t)new_stack);
-  mmu_map_page(mmu_unmap_page(new_stack+0x0000), new_stack+0x0000, 0x7);
-  mmu_map_page(mmu_unmap_page(new_stack+0x1000), new_stack+0x1000, 0x7);
-  mmu_map_page(mmu_unmap_page(new_stack+0x2000), new_stack+0x2000, 0x7);
-  mmu_map_page(mmu_unmap_page(new_stack+0x3000), new_stack+0x3000, 0x7);
-  ((uintptr_t*)new_stack)[0x1000 - 1] = (uintptr_t)elf;
-
-  // Create the new program's TSS.
-  new_tss = kmemalign(PAGESIZE, sizeof(struct tss));
-  __builtin_memset(new_tss, 0, sizeof(*new_tss));
-  new_tss->eip    = (unsigned int)prepare_new_process;
-  new_tss->esp    = (unsigned int)(new_stack + 0x4000 - 8);
-  new_tss->eax    = (unsigned int)elf;
-  new_tss->cr3    = (unsigned int)mmu_get_paddr(new_pagedir);
-  new_tss->eflags = 0x0200;  // Interrupts are enabled.
-  // Selectors with RPL=0 for now, switch_to_ring3 will be called later.
-  new_tss->cs     = 0x08;
-  new_tss->ds     = 0x10;
-  new_tss->es     = 0x10;
-  new_tss->fs     = 0x10;
-  new_tss->gs     = 0x10;
-  new_tss->ss     = 0x10;
-
-  // Set the TSS in the GDT.
-  gdt[6].limit_lo    = (((uintptr_t)(sizeof(*new_tss))) & 0x0000FFFF);
-  gdt[6].base_lo     = (((uintptr_t)(new_tss)) & 0x00FFFFFF);
-  gdt[6].type        = 9;
-  gdt[6].reserved1   = 0;
-  gdt[6].dpl         = 3;
-  gdt[6].present     = 1;
-  gdt[6].limit_hi    = (((uintptr_t)(sizeof(*new_tss))) & 0xFFFF0000) >> 16;
-  gdt[6].available   = 0;
-  gdt[6].reserved2   = 0;
-  gdt[6].granularity = 0;
-  gdt[6].base_hi     = (((uintptr_t)(new_tss)) & 0xFF000000) >> 24;
-
-  // Jump to the new task with RPL=3 (although it doesn't matter since CPL=0).
-  sel[0] = 0;
-  sel[1] = 0x30 | 0x03;
-  __asm__ __volatile__ ("ljmp *%0" : : "m" (*sel) : "memory");
-  while (1) { }
-}
-
-static void init_kernel_tss(void) {
-  static struct tss kernel_tss __attribute__ ((aligned(0x1000)));
-
-  gdt[5].limit_lo    = (((uintptr_t)(sizeof(kernel_tss))) & 0x0000FFFF);
-  gdt[5].base_lo     = (((uintptr_t)(&kernel_tss)) & 0x00FFFFFF);
+  gdt[5].limit_lo    = (((uintptr_t)(sizeof(tss))) & 0x0000FFFF);
+  gdt[5].base_lo     = (((uintptr_t)(&tss)) & 0x00FFFFFF);
   gdt[5].type        = 9;
   gdt[5].reserved1   = 0;
   gdt[5].dpl         = 0;
   gdt[5].present     = 1;
-  gdt[5].limit_hi    = (((uintptr_t)(sizeof(kernel_tss))) & 0xFFFF0000) >> 16;
+  gdt[5].limit_hi    = (((uintptr_t)(sizeof(tss))) & 0xFFFF0000) >> 16;
   gdt[5].available   = 0;
   gdt[5].reserved2   = 0;
   gdt[5].granularity = 0;
-  gdt[5].base_hi     = (((uintptr_t)(&kernel_tss)) & 0xFF000000) >> 24;
+  gdt[5].base_hi     = (((uintptr_t)(&tss)) & 0xFF000000) >> 24;
 
-  // The kernel's TSS is set to zeros because:
-  //   1) There should never be a switch to this task from a different
-  //      privilege level.
-  // and
-  //   2) The necessary fields will be filled in upon the first switch to a
-  //      different task.
-  // The exception to this is cr3, because the processor doesn't save it on a
-  // task switch.
-  __builtin_memset(&kernel_tss, 0, sizeof(kernel_tss));
-  __asm__ __volatile__ ("movl %%cr3, %0" : "=r" (kernel_tss.cr3));
+  __builtin_memset(&tss, 0, sizeof(tss));
+  tss.ss0  = 0x10;
+  tss.esp0 = (uintptr_t)&kernel_stack_top;
+  __asm__ __volatile__ ("movl %%cr3, %0" : "=r" (tss.cr3));
 
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");
 }

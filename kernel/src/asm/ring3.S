@@ -20,12 +20,12 @@ switch_to_ring3:
 
               //    Push %ss and %esp onto the stack for ring3.
               push  $0x23
-              push  %esp
+              push  0xc(%ebp)
 
               // Push a modified version of eflags that has IF set.
               pushf
               pop   %eax
-              or    $0x200, %eax
+              or    $0x0200, %eax
               push  %eax
 
               //    Disable NT so that iret doesn't try to return from a task.

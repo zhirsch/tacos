@@ -53,7 +53,9 @@ void putch(char ch) {
     // Move to the next line.
     cursor.x = 0;
     cursor.y++;
-    outb(0xe9, '\n');
+    if (ch == '\n') {
+      outb(0xe9, '\n');
+    }
   }
   scroll();
 }
