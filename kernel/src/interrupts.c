@@ -55,7 +55,7 @@ void init_interrupts(void) {
     idt[i].selector  = 0x08;
     idt[i].reserved  = 0;
     idt[i].type      = 0xE;  // Interrupt gate.
-    idt[i].dpl       = 0;
+    idt[i].dpl       = 0x3;
     idt[i].present   = 1;
     idt[i].offset_hi = (((uintptr_t)isr_array[i]) & 0xFFFF0000) >> 16;
   }

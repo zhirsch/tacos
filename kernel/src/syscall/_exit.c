@@ -1,4 +1,4 @@
-#include "syscall/_exit.h"
+#include "syscall/syscalls.h"
 
 #include "interrupts.h"
 #include "panic.h"

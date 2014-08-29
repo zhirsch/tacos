@@ -91,6 +91,7 @@ static void exec_elf(const void* elf) {
   uintptr_t* new_stack;
   struct Elf32_Ehdr* ehdr;
   struct Elf32_Phdr* phdr;
+  uintptr_t binary_end = 0;
 
   // Parse the elf header.
   ehdr = (struct Elf32_Ehdr*)elf;
@@ -167,6 +168,7 @@ static void exec_elf(const void* elf) {
         kprintf("ELF: Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
         __builtin_memset((void*)bss_base, 0, bss_size);
       }
+      binary_end = ((bss_base + bss_size) & 0xfffff000) + PAGESIZE;
       break;
     }
     default:
@@ -178,6 +180,14 @@ static void exec_elf(const void* elf) {
   // Create the new program's stack.
   new_stack = mmu_new_stack((void*)0xBF400000, 16, 1);
   kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_stack);
+
+  // TODO(zhirsch): Make argc, argv, envp available.
+
+  // Set the program break to the end of the elf stuff.
+  if (binary_end == 0) {
+    panic("ELF: Unable to find the end of the binary\n");
+  }
+  current_program_break = binary_end;
 
   // Switch to the new process in ring 3.
   switch_to_ring3((const void*)ehdr->e_entry, new_stack);

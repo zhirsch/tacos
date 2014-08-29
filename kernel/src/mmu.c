@@ -64,6 +64,8 @@ static inline void invlpg(void* vaddr) {
 static void init_paddr_stack(multiboot_info_t* mbi);
 static void init_paging(void);
 
+uintptr_t current_program_break = 0xdeadbeef;
+
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
     panic("MMU: multiboot doesn't provide mem_*\n");
@@ -206,7 +208,7 @@ void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages) {
     mmu_map_page(NULL, (void*)vaddr, 0x0);
     vaddr += PAGESIZE;
   }
-  return (void*)((uintptr_t)base_vaddr + (fence_pages + pages) * PAGESIZE);
+  return (void*)((uintptr_t)base_vaddr + (fence_pages + pages) * PAGESIZE - 1);
 }
 
 static uintptr_t heap_end_vaddr = 0xE0000000;

@@ -8,6 +8,9 @@
 // The size of each page.
 #define PAGESIZE 4096
 
+// TODO(zhirsch): Store this in some struct that stores all the process info.
+extern uintptr_t current_program_break;
+
 // Initialize the MMU.  Should only be called once.
 void init_mmu(multiboot_info_t* mbi);
 

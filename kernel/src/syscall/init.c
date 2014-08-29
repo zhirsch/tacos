@@ -2,12 +2,12 @@
 
 #include "interrupts.h"
 #include "panic.h"
-#include "syscall/_exit.h"
-#include "syscall/write.h"
+#include "syscall/syscalls.h"
 
 const char* syscall_names[NUM_SYSCALLS] = {
   "_exit",  // 0x00
   "write",  // 0x01
+  "sbrk",   // 0x02
 };
 
 static void syscall_handler(struct isr_frame* frame);
@@ -25,6 +25,9 @@ static void syscall_handler(struct isr_frame* frame) {
     return;
   case SYSCALL_WRITE:
     syscall_write(frame);
+    return;
+  case SYSCALL_SBRK:
+    syscall_sbrk(frame);
     return;
   }
   panic("SYSCALL: Unknown syscall %d\n", syscall);
