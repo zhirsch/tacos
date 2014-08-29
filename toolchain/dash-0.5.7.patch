@@ -1,0 +1,26 @@
+diff -Naur dash-0.5.7.orig/src/mkinit.c dash-0.5.7/src/mkinit.c
+--- dash-0.5.7.orig/src/mkinit.c	2008-05-01 23:09:44.000000000 -0700
++++ dash-0.5.7/src/mkinit.c	2014-08-28 23:14:53.065751810 -0700
+@@ -43,6 +43,7 @@
+  */
+ 
+ 
++#undef _GNU_SOURCE
+ #include <sys/types.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+diff -Naur dash-0.5.7.orig/src/mksignames.c dash-0.5.7/src/mksignames.c
+--- dash-0.5.7.orig/src/mksignames.c	2008-05-02 23:54:12.000000000 -0700
++++ dash-0.5.7/src/mksignames.c	2014-08-27 22:02:32.864325984 -0700
+@@ -24,9 +24,8 @@
+ #include <signal.h>
+ #include <stdlib.h>
+ 
+-#if !defined (NSIG)
+-#  define NSIG 64
+-#endif
++#undef NSIG
++#define NSIG 32
+ 
+ /*
+  * Special traps:

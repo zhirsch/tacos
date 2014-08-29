@@ -221,7 +221,7 @@ static void page_fault_handler(int vector, int error_code, struct tss* prev_tss)
   print_call_stack(prev_tss->eip, prev_tss->ebp);
   if ((uintptr_t)&kernel_stack_bottom_fence <= cr2 && cr2 < (uintptr_t)&kernel_stack_bottom) {
     panic("    kernel stack overflow\n");
-  } else if ((uintptr_t)kernel_stack_top <= cr2 && cr2 < (uintptr_t)kernel_stack_top_fence) {
+  } else if ((uintptr_t)&kernel_stack_top <= cr2 && cr2 < (uintptr_t)&kernel_stack_top_fence) {
     panic("    kernel stack underflow\n");
   } else {
     panic("    unknown reason\n");

@@ -6,6 +6,7 @@ set -ex
 BINUTILS_VERSION=2.24
 GCC_VERSION=4.9.1
 NEWLIB_VERSION=2.1.0
+DASH_VERSION=0.5.7
 
 ROOT=$(readlink -f $(dirname $0))
 SOURCE=$ROOT/source
@@ -29,6 +30,8 @@ patch -d gcc-$GCC_VERSION -p1 < ../gcc-$GCC_VERSION.patch
 #curl ftp://sourceware.org/pub/newlib/newlib-$NEWLIB_VERSION.tar.gz | tar zx
 cat $ROOT/newlib-$NEWLIB_VERSION.tar.gz | tar zx
 patch -d newlib-$NEWLIB_VERSION -p1 < ../newlib-$NEWLIB_VERSION.patch
+cat $ROOT/dash-$DASH_VERSION.tar.gz | tar zx
+patch -d dash-$DASH_VERSION -p1 < ../dash-$DASH_VERSION.patch
 popd
 
 pushd $SOURCE/newlib-$NEWLIB_VERSION
@@ -94,7 +97,8 @@ pushd newlib
 PATH=$PATH:$PREFIX/bin $SOURCE/newlib-$NEWLIB_VERSION/configure \
     --target=$TARGET \
     --prefix=$PREFIX \
-    --disable-nls
+    --disable-nls \
+    CFLAGS='-fno-omit-frame-pointer -g3'
 PATH=$PATH:$PREFIX/bin make -j4
 PATH=$PATH:$PREFIX/bin make install
 popd
@@ -108,4 +112,15 @@ $SOURCE/gcc-$GCC_VERSION/configure \
     --enable-languages=c
 make -j4
 make install-strip
+popd
+
+# --- Build user space programs.
+mkdir dash
+pushd dash
+PATH=$PATH:$PREFIX/bin $SOURCE/dash-$DASH_VERSION/configure \
+    --host=i686-pc-tacos \
+    --prefix=$PREFIX \
+    CFLAGS='-fno-omit-frame-pointer -g3'
+PATH=$PATH:$PREFIX/bin make -j4
+PATH=$PATH:$PREFIX/bin make install
 popd

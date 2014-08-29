@@ -2,6 +2,7 @@
 
 #include "dt.h"
 #include "elf.h"
+#include "fpu.h"
 #include "ide/ide.h"
 #include "interrupts.h"
 #include "iso9660.h"
@@ -44,6 +45,9 @@ void kmain(int magic, multiboot_info_t* mbi) {
   // Initialize the address space.
   init_mmu(mbi);
   init_kernel_tss();
+
+  // Initialize the FPU.
+  init_fpu();
 
   // Enable interrupts.
   init_interrupts();
@@ -169,6 +173,9 @@ static void prepare_new_process(void* init_vaddr) {
     }
     phdr++;
   }
+
+  // Reset the FPU to an initial state.
+  fpu_reset();
 
   // Switch to the new process in ring 3.
   switch_to_ring3((void*)ehdr->e_entry);
