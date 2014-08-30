@@ -178,10 +178,65 @@ static void exec_elf(const void* elf) {
   }
 
   // Create the new program's stack.
-  new_stack = mmu_new_stack((void*)0xBF400000, 16, 1);
+  new_stack = mmu_new_stack((void*)0xBF000000, 16, 1);
   kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_stack);
 
-  // TODO(zhirsch): Make argc, argv, envp available.
+  // Prepare argc, argv, and envp.
+  {
+    char* vaddr = (char*)0xBE000000;
+    mmu_map_page(mmu_acquire_physical_page(), vaddr, 0x1 | 0x2 | 0x4);
+
+    // argv[0]
+    vaddr[0x00] = 'd';
+    vaddr[0x01] = 'a';
+    vaddr[0x02] = 's';
+    vaddr[0x03] = 'h';
+    vaddr[0x04] = '\0';
+    // argv[1]
+    vaddr[0x05] = '-';
+    vaddr[0x06] = 'c';
+    vaddr[0x07] = '\0';
+    // argv[2]
+    vaddr[0x08] = 's';
+    vaddr[0x09] = 'e';
+    vaddr[0x0a] = 't';
+    vaddr[0x0b] = ';';
+    vaddr[0x0c] = 'e';
+    vaddr[0x0d] = 'c';
+    vaddr[0x0e] = 'h';
+    vaddr[0x0f] = 'o';
+    vaddr[0x10] = ' ';
+    vaddr[0x11] = 'h';
+    vaddr[0x12] = 'i';
+    vaddr[0x13] = '!';
+    vaddr[0x14] = '\0';
+
+    // envp[0]
+    vaddr[0x20] = 'O';
+    vaddr[0x21] = 'S';
+    vaddr[0x22] = '=';
+    vaddr[0x23] = 'T';
+    vaddr[0x24] = 'a';
+    vaddr[0x25] = 'c';
+    vaddr[0x26] = 'O';
+    vaddr[0x27] = 'S';
+    vaddr[0x28] = '\0';
+
+    // argv
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0) = (uintptr_t)(vaddr + 0x00);
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 1) = (uintptr_t)(vaddr + 0x05);
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 2) = (uintptr_t)(vaddr + 0x08);
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3) = (uintptr_t)NULL;
+
+    // envp
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4) = (uintptr_t)(vaddr + 0x20);
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 5) = (uintptr_t)NULL;
+
+    // Set the stack.
+    new_stack[-1] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4);  // envp
+    new_stack[-2] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0);  // argv
+    new_stack[-3] = 1;  // argc
+  }
 
   // Set the program break to the end of the elf stuff.
   if (binary_end == 0) {
@@ -190,7 +245,7 @@ static void exec_elf(const void* elf) {
   current_program_break = binary_end;
 
   // Switch to the new process in ring 3.
-  switch_to_ring3((const void*)ehdr->e_entry, new_stack);
+  switch_to_ring3((const void*)ehdr->e_entry, new_stack - 3);
 }
 
 static void init_tss(void) {

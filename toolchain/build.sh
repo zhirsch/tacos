@@ -98,7 +98,7 @@ PATH=$PATH:$PREFIX/bin $SOURCE/newlib-$NEWLIB_VERSION/configure \
     --target=$TARGET \
     --prefix=$PREFIX \
     --disable-nls \
-    CFLAGS='-fno-omit-frame-pointer -g3'
+    CFLAGS='-fno-omit-frame-pointer -g3 -D_I386MACH_ALLOW_HW_INTERRUPTS'
 PATH=$PATH:$PREFIX/bin make -j4
 PATH=$PATH:$PREFIX/bin make install
 popd
