@@ -4,6 +4,7 @@ Import('env')
 # Compile the sources.
 objects = env.Object([
     '_exit.c',
+    'getcwd.c',
     'init.c',
     'sbrk.c',
     'write.c',

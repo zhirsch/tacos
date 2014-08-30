@@ -31,7 +31,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   init_ssp();
 
   // Clear the screen.
-  clearscreen();
+  screen_clear();
 
   // Copy the command line into a buffer with a valid virtual address.  The boot
   // loader stores a physical address in mbi->cmdline, which won't be accessible
@@ -40,7 +40,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   cmdline[sizeof(cmdline)-1] = '\0';
 
   // Announce the OS.
-  kprintf("TacOS! (%s)\n", cmdline);
+  screen_writef("TacOS! (%s)\n", cmdline);
 
   // Initialize the address space.
   init_mmu(mbi);
