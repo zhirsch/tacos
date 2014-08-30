@@ -197,19 +197,24 @@ static void exec_elf(const void* elf) {
     vaddr[0x06] = 'c';
     vaddr[0x07] = '\0';
     // argv[2]
-    vaddr[0x08] = 's';
-    vaddr[0x09] = 'e';
-    vaddr[0x0a] = 't';
-    vaddr[0x0b] = ';';
-    vaddr[0x0c] = 'e';
-    vaddr[0x0d] = 'c';
-    vaddr[0x0e] = 'h';
-    vaddr[0x0f] = 'o';
-    vaddr[0x10] = ' ';
-    vaddr[0x11] = 'h';
-    vaddr[0x12] = 'i';
-    vaddr[0x13] = '!';
-    vaddr[0x14] = '\0';
+    vaddr[0x08] = 'p';
+    vaddr[0x09] = 'r';
+    vaddr[0x0a] = 'i';
+    vaddr[0x0b] = 'n';
+    vaddr[0x0c] = 't';
+    vaddr[0x0d] = 'f';
+    vaddr[0x0e] = ' ';
+    vaddr[0x0f] = '%';
+    vaddr[0x10] = '.';
+    vaddr[0x11] = '1';
+    vaddr[0x12] = 'f';
+    vaddr[0x13] = ' ';
+    vaddr[0x14] = ' ';
+    vaddr[0x15] = '3';
+    vaddr[0x16] = '.';
+    vaddr[0x17] = '1';
+    vaddr[0x18] = '4';
+    vaddr[0x19] = '\0';
 
     // envp[0]
     vaddr[0x20] = 'O';
