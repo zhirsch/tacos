@@ -8,6 +8,7 @@
 #include "kprintf.h"
 #include "multiboot.h"
 #include "panic.h"
+#include "sbrk.h"
 
 // The sentinel that marks the bottom of the paddr stack.
 #define PADDR_STACK_SENTINEL 0xDEADBEEF
@@ -64,7 +65,8 @@ static inline void invlpg(void* vaddr) {
 static void init_paddr_stack(multiboot_info_t* mbi);
 static void init_paging(void);
 
-uintptr_t current_program_break = 0xdeadbeef;
+static uintptr_t kernel_program_break = 0xE0000000;
+uintptr_t current_program_break = 0xDEADBEEF;
 
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
@@ -211,31 +213,17 @@ void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages) {
   return (void*)((uintptr_t)base_vaddr + (fence_pages + pages) * PAGESIZE - 1);
 }
 
-static uintptr_t heap_end_vaddr = 0xE0000000;
-
 void* ksbrk(intptr_t increment) {
-  void* vaddr = (void*)heap_end_vaddr;
+  const uintptr_t vaddr = kernel_program_break;
   // Make sure that a multiple of a page was requested.
   if (increment & (PAGESIZE - 1)) {
     panic("MMU: ksbrk(%lx) is not page aligned\n", increment);
   } else if (increment < 0) {
-    // Shrink the heap.
-    for (intptr_t i = 0; i < -increment; i += PAGESIZE) {
-      void* paddr;
-      heap_end_vaddr -= PAGESIZE;
-      paddr = mmu_unmap_page((void*)heap_end_vaddr);
-      mmu_release_physical_page(paddr);
-    }
+    sbrk_shrink(&kernel_program_break, -increment);
   } else if (increment > 0) {
-    // Grow the heap.
-    for (intptr_t i = 0; i < increment; i += PAGESIZE) {
-      void* paddr;
-      paddr = mmu_acquire_physical_page();
-      mmu_map_page(paddr, (void*)heap_end_vaddr, 0x3);
-      heap_end_vaddr += PAGESIZE;
-    }
+    sbrk_grow(&kernel_program_break, increment);
   }
-  return vaddr;
+  return (void*)vaddr;
 }
 
 static void page_fault_handler(struct isr_frame* frame) {
