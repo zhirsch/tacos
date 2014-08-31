@@ -66,7 +66,6 @@ static void init_paddr_stack(multiboot_info_t* mbi);
 static void init_paging(void);
 
 static uintptr_t kernel_program_break = 0xE0000000;
-uintptr_t current_program_break = 0xDEADBEEF;
 
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
@@ -190,6 +189,31 @@ void* mmu_unmap_page(void* vaddr) {
   invlpg(vaddr);
   // TODO(zhirsch): Free the page containing the PTEs if they're all unmapped?
   return paddr;
+}
+
+uintptr_t mmu_new_page_directory(void) {
+  const uintptr_t new_pagedir_paddr = (uintptr_t)mmu_acquire_physical_page();
+  mmu_map_page((void*)new_pagedir_paddr, (void*)0xB0000000, 0x1 | 0x2);
+
+  // Copy the last fourth of the existing page directory.  This copies the
+  // kernel mappings.
+  // TODO(zhirsch): Make sure that all the PDEs are populated so that every
+  // process gets a consistent view.
+  __builtin_memcpy((void*)0xB0000C00, (void*)0xFFFFFC00, PAGESIZE / 4);
+
+  // Map the new page directory as the last entry so that the page directory can
+  // easily be refernced.
+  ((uintptr_t*)0xB0000000)[1023] = new_pagedir_paddr | 0x1 | 0x2;
+
+  // Unmap the new page directory.
+  mmu_unmap_page((void*)0xB0000000);
+
+  return new_pagedir_paddr;
+}
+
+void mmu_switch_page_directory(uintptr_t cr3) {
+  __asm__ __volatile__ ("mov %0, %%cr3" : : "a" (cr3) : "memory");
+  mmu_map_page((void*)0x000B8000, (void*)0x000B8000, 0x3);
 }
 
 void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages) {

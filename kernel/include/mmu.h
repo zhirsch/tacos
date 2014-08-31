@@ -8,9 +8,6 @@
 // The size of each page.
 #define PAGESIZE 4096
 
-// TODO(zhirsch): Store this in some struct that stores all the process info.
-extern uintptr_t current_program_break;
-
 // Initialize the MMU.  Should only be called once.
 void init_mmu(multiboot_info_t* mbi);
 
@@ -33,10 +30,16 @@ void mmu_map_page(void* paddr, void* vaddr, int flags);
 // address of the physical page that was mapped.
 void* mmu_unmap_page(void* vaddr);
 
+// Create a new page directory.  The kernel is mapped in, but nothing else.
+uintptr_t mmu_new_page_directory(void);
+
 // Create a new stack.  The stack itself is protected by fence_pages on both the
 // top and the bottom.  The return address is the top of the stack (the highest
 // mapped address).
 void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages);
+
+// Switch to a different page directory.
+void mmu_switch_page_directory(uintptr_t cr3);
 
 // Kernel's implemnetation of sbrk.
 void* ksbrk(intptr_t increment);

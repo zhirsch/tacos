@@ -3,11 +3,28 @@ Import('env')
 
 # Compile the sources.
 objects = env.Object([
+    'close.c',
     '_exit.c',
+    'fcntl.c',
     'getcwd.c',
+    'getegid.c',
+    'geteuid.c',
+    'getgid.c',
+    'getpgid.c',
+    'getpid.c',
+    'getppid.c',
+    'getuid.c',
+    'isatty.c',
     'init.c',
+    'open.c',
     'read.c',
     'sbrk.c',
+    'setpgid.c',
+    'sigaction.c',
+    'sigfillset.c',
+    'tcgetpgrp.c',
+    'tcsetpgrp.c',
+    'waitpid.c',
     'write.c',
 ])
 

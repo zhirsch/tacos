@@ -7,7 +7,7 @@
 #include "panic.h"
 #include "screen.h"
 
-static const char CMD[] = "pwd\n";
+static const char CMD[] = "echo $OS; set";
 static unsigned int pos = 0;
 
 static int min(int a, int b) {

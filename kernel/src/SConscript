@@ -63,10 +63,12 @@ objects += env.Object([
     'mmu.c',
     'panic.c',
     'pic.c',
+    'process.c',
     'sbrk.c',
     'screen.c',
     'snprintf.c',
     'string.c',
+    'tty.c',
 ])
 
 # Compile ssp.c with stack protection disabled.

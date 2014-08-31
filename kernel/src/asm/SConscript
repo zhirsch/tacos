@@ -6,7 +6,6 @@ objects = env.Object([
     'idt.S',
     'isr.S',
     'pagedir.S',
-    'ring3.S',
 ])
 
 # The linker script includes boot.S explicitly.  Don't include it in objects.

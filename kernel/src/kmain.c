@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "bits/fcntl.h"
+
 #include "dt.h"
 #include "elf.h"
 #include "fpu.h"
@@ -13,16 +15,18 @@
 #include "panic.h"
 #include "pic.h"
 #include "portio.h"
-#include "ring3.h"
+#include "process.h"
 #include "screen.h"
 #include "snprintf.h"
 #include "ssp.h"
 #include "syscall/init.h"
 #include "tss.h"
+#include "tty.h"
 
 static void init_tss(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
 static void exec_elf(const void* elf) __attribute__ ((noreturn));
+static void switch_to_ring3(struct process* process) __attribute__ ((noreturn));
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
@@ -30,7 +34,8 @@ void kmain(int magic, multiboot_info_t* mbi) {
 
   init_ssp();
 
-  // Clear the screen.
+  // Initialize the consoles.
+  init_tty();
   screen_clear();
 
   // Copy the command line into a buffer with a valid virtual address.  The boot
@@ -87,11 +92,54 @@ static void start_init(const char* cmdline) {
   exec_elf(init_vaddr);
 }
 
+
 static void exec_elf(const void* elf) {
-  uintptr_t* new_stack;
+  struct process* new_process;
   struct Elf32_Ehdr* ehdr;
   struct Elf32_Phdr* phdr;
-  uintptr_t binary_end = 0;
+
+  // Disable interrupts.
+  __asm__ __volatile__ ("cli");
+
+  // Create space for the new process struct.
+  new_process = kmalloc(sizeof(*new_process));
+  __builtin_memset(new_process, 0, sizeof(*new_process));
+  new_process->pid = 1;
+  new_process->ppid = 0;
+  new_process->pgid = 1;
+  new_process->uid = 0;
+  new_process->euid = 0;
+  new_process->gid = 0;
+  new_process->egid = 0;
+  new_process->tty = 0;
+  new_process->cwd = "/";
+  new_process->tss.cs = 0x1b;
+  new_process->tss.ss = 0x23;
+  new_process->tss.ds = 0x23;
+  new_process->tss.es = 0x23;
+  new_process->tss.fs = 0x23;
+  new_process->tss.gs = 0x23;
+  new_process->tss.eflags = 0x0200;
+
+  // Set the new process as the foreground process group for the tty.
+  ttys[0].pgid = 1;
+
+  // stdin
+  new_process->fds[0].used = 1;
+  new_process->fds[0].flags = O_RDONLY;
+  new_process->fds[0].tty = 0;
+  // stdout
+  new_process->fds[1].used = 1;
+  new_process->fds[1].flags = O_WRONLY;
+  new_process->fds[1].tty = 0;
+  // stderr
+  new_process->fds[2].used = 1;
+  new_process->fds[2].flags = O_WRONLY;
+  new_process->fds[2].tty = 0;
+
+  // Create a new address space for the process.
+  new_process->tss.cr3 = mmu_new_page_directory();
+  mmu_switch_page_directory(new_process->tss.cr3);
 
   // Parse the elf header.
   ehdr = (struct Elf32_Ehdr*)elf;
@@ -124,6 +172,7 @@ static void exec_elf(const void* elf) {
   }
 
   kprintf("ELF: Entry point: %08lx\n", ehdr->e_entry);
+  new_process->tss.eip = ehdr->e_entry;
 
   // Process each of the program headers.
   phdr = (struct Elf32_Phdr*)(((uint8_t*)elf) + ehdr->e_phoff);
@@ -148,7 +197,7 @@ static void exec_elf(const void* elf) {
       default:
         panic("ELF: Unknown flags: %08lx\n", phdr->p_flags);
       }
-      while (dst < (phdr->p_vaddr & 0xfffff000) + phdr->p_filesz) {
+      while (dst < (phdr->p_vaddr + phdr->p_filesz)) {
         const uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)src);
         kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for %s\n", dst, paddr,
                 (perm == 0x1) ? "TEXT" : "DATA");
@@ -158,7 +207,7 @@ static void exec_elf(const void* elf) {
         dst += PAGESIZE;
       }
       // Allocate additional pages for the BSS and zero it out.
-      while (dst < (phdr->p_vaddr & 0xfffff000) + phdr->p_memsz) {
+      while (dst < (phdr->p_vaddr + phdr->p_memsz)) {
         const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
         kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for BSS\n", dst, paddr);
         mmu_map_page((void*)paddr, (void*)dst, 0x3 | 0x4);
@@ -168,7 +217,6 @@ static void exec_elf(const void* elf) {
         kprintf("ELF: Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
         __builtin_memset((void*)bss_base, 0, bss_size);
       }
-      binary_end = ((bss_base + bss_size) & 0xfffff000) + PAGESIZE;
       break;
     }
     default:
@@ -177,14 +225,20 @@ static void exec_elf(const void* elf) {
     phdr++;
   }
 
+  // Set the break to the end of the last segment, aligned to the next page.
+  new_process->program_break  = (phdr - 1)->p_vaddr + (phdr - 1)->p_memsz;
+  new_process->program_break &= ~(PAGESIZE - 1);
+  new_process->program_break += PAGESIZE;
+
   // Create the new program's stack.
-  new_stack = mmu_new_stack((void*)0xBF000000, 16, 1);
-  kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_stack);
+  new_process->tss.esp = (uintptr_t)mmu_new_stack((void*)0xBF000000, 16, 1);
+  kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_process->tss.esp);
 
   // Prepare argc, argv, and envp.
   {
     char* vaddr = (char*)0xBE000000;
-    mmu_map_page(mmu_acquire_physical_page(), vaddr, 0x1 | 0x2 | 0x4);
+    new_process->args_paddr = (uintptr_t)mmu_acquire_physical_page();
+    mmu_map_page((void*)new_process->args_paddr, vaddr, 0x1 | 0x2 | 0x4);
 
     // argv[0]
     vaddr[0x00] = 'd';
@@ -198,6 +252,15 @@ static void exec_elf(const void* elf) {
     vaddr[0x07] = '\0';
 
     // envp is empty.
+    vaddr[0x80] = 'O';
+    vaddr[0x81] = 'S';
+    vaddr[0x82] = '=';
+    vaddr[0x83] = 'T';
+    vaddr[0x84] = 'a';
+    vaddr[0x85] = 'c';
+    vaddr[0x86] = 'O';
+    vaddr[0x87] = 'S';
+    vaddr[0x88] = '\0';
 
     // argv
     *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0) = (uintptr_t)(vaddr + 0x00);
@@ -205,26 +268,69 @@ static void exec_elf(const void* elf) {
     *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 2) = (uintptr_t)NULL;
 
     // envp
-    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3) = (uintptr_t)NULL;
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3) = (uintptr_t)(vaddr + 0x80);
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4) = (uintptr_t)NULL;
 
     // Set the stack.
-    new_stack[-1] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4);  // envp
-    new_stack[-2] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0);  // argv
-    new_stack[-3] = 1;  // argc
+    ((uintptr_t*)new_process->tss.esp)[-1] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3);  // envp
+    ((uintptr_t*)new_process->tss.esp)[-2] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0);  // argv
+    ((uintptr_t*)new_process->tss.esp)[-3] = 1;  // argc
+    new_process->tss.esp -= 3 * sizeof(uintptr_t);
   }
 
-  // Set the program break to the end of the elf stuff.
-  if (binary_end == 0) {
-    panic("ELF: Unable to find the end of the binary\n");
-  }
-  current_program_break = binary_end;
+  // Set the new process as the active process.
+  current_process = new_process;
 
   // Switch to the new process in ring 3.
-  switch_to_ring3((const void*)ehdr->e_entry, new_stack - 3);
+  switch_to_ring3(new_process);
+}
+
+static void switch_to_ring3(struct process* process) {
+  // Set the data selectors.
+  __asm__ __volatile__ ("mov %0, %%ds\n"
+                        "mov %1, %%es\n"
+                        "mov %2, %%fs\n"
+                        "mov %3, %%gs"
+                        :
+                        : "g" (process->tss.ds),
+                          "g" (process->tss.es),
+                          "g" (process->tss.fs),
+                          "g" (process->tss.gs));
+
+  // Push ss and esp.
+  __asm__ __volatile__ ("push %0\n"
+                        "push %1"
+                        :
+                        : "g" (process->tss.ss),
+                          "g" (process->tss.esp));
+
+  // Push eflags.
+  __asm__ __volatile__ ("pushf\n"
+                        "pop %%eax\n"
+                        "or %0, %%eax\n"
+                        "push %%eax"
+                        :
+                        : "g" (process->tss.eflags)
+                        : "eax");
+
+  // Push cs and eip.
+  __asm__ __volatile__ ("push %0\n"
+                        "push %1"
+                        :
+                        : "g" (process->tss.cs),
+                          "g" (process->tss.eip));
+
+  // Switch to ring3
+  __asm__ __volatile__ ("iret"
+                        :
+                        :
+                        : "memory");
+
+  while (1) { }
 }
 
 static void init_tss(void) {
-  static struct tss tss __attribute__ ((aligned(0x1000)));
+  static struct tss tss __attribute__ ((aligned(PAGESIZE)));
   extern void* kernel_stack_top;
 
   gdt[5].limit_lo    = (((uintptr_t)(sizeof(tss))) & 0x0000FFFF);
@@ -242,7 +348,6 @@ static void init_tss(void) {
   __builtin_memset(&tss, 0, sizeof(tss));
   tss.ss0  = 0x10;
   tss.esp0 = (uintptr_t)&kernel_stack_top;
-  __asm__ __volatile__ ("movl %%cr3, %0" : "=r" (tss.cr3));
 
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");
 }
