@@ -6,6 +6,7 @@ objects = env.Object([
     '_exit.c',
     'getcwd.c',
     'init.c',
+    'read.c',
     'sbrk.c',
     'write.c',
 ])

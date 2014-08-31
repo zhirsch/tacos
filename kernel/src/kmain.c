@@ -194,48 +194,18 @@ static void exec_elf(const void* elf) {
     vaddr[0x04] = '\0';
     // argv[1]
     vaddr[0x05] = '-';
-    vaddr[0x06] = 'c';
+    vaddr[0x06] = 'i';
     vaddr[0x07] = '\0';
-    // argv[2]
-    vaddr[0x08] = 'p';
-    vaddr[0x09] = 'r';
-    vaddr[0x0a] = 'i';
-    vaddr[0x0b] = 'n';
-    vaddr[0x0c] = 't';
-    vaddr[0x0d] = 'f';
-    vaddr[0x0e] = ' ';
-    vaddr[0x0f] = '%';
-    vaddr[0x10] = '.';
-    vaddr[0x11] = '1';
-    vaddr[0x12] = 'f';
-    vaddr[0x13] = ' ';
-    vaddr[0x14] = ' ';
-    vaddr[0x15] = '3';
-    vaddr[0x16] = '.';
-    vaddr[0x17] = '1';
-    vaddr[0x18] = '4';
-    vaddr[0x19] = '\0';
 
-    // envp[0]
-    vaddr[0x20] = 'O';
-    vaddr[0x21] = 'S';
-    vaddr[0x22] = '=';
-    vaddr[0x23] = 'T';
-    vaddr[0x24] = 'a';
-    vaddr[0x25] = 'c';
-    vaddr[0x26] = 'O';
-    vaddr[0x27] = 'S';
-    vaddr[0x28] = '\0';
+    // envp is empty.
 
     // argv
     *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 0) = (uintptr_t)(vaddr + 0x00);
     *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 1) = (uintptr_t)(vaddr + 0x05);
-    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 2) = (uintptr_t)(vaddr + 0x08);
-    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3) = (uintptr_t)NULL;
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 2) = (uintptr_t)NULL;
 
     // envp
-    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4) = (uintptr_t)(vaddr + 0x20);
-    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 5) = (uintptr_t)NULL;
+    *((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 3) = (uintptr_t)NULL;
 
     // Set the stack.
     new_stack[-1] = (uintptr_t)((uintptr_t*)vaddr + 0x800 / sizeof(uintptr_t) + 4);  // envp

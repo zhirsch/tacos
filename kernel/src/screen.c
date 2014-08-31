@@ -14,6 +14,7 @@ static int attrib = 0x07;
 static struct { char x, y; } cursor = { 0, 0 };
 
 static void scroll(void);
+static void update_cursor(void);
 
 void screen_clear(void) {
   // Write a space to every position.
@@ -40,6 +41,7 @@ void screen_writech(char ch) {
     cursor.y++;
   }
   scroll();
+  update_cursor();
 }
 
 void screen_writef(const char* fmt, ...) {
@@ -72,4 +74,15 @@ static void scroll(void) {
 
   // Set the cursor to the last line.
   cursor.y = MAXLINES - 1;
+}
+
+static void update_cursor(void) {
+  const uint16_t position = (cursor.y * MAXCOLS) + cursor.x;
+
+  // cursor LOW port to vga INDEX register
+  outb(0x3D4, 0x0F);
+  outb(0x3D5, (uint8_t)((position & 0x00FF) >> 0));
+  // cursor HIGH port to vga INDEX register
+  outb(0x3D4, 0x0E);
+  outb(0x3D5, (uint8_t)((position & 0xFF00) >> 8));
 }

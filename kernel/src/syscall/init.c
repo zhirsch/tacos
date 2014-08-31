@@ -9,6 +9,7 @@ const char* syscall_names[NUM_SYSCALLS] = {
   "write",  // 0x01
   "sbrk",   // 0x02
   "getcwd", // 0x03
+  "read",   // 0x04
 };
 
 static void syscall_handler(struct isr_frame* frame);
@@ -19,6 +20,9 @@ void init_syscalls(void) {
 
 static void syscall_handler(struct isr_frame* frame) {
   const int syscall = frame->eax;
+  if (syscall > NUM_SYSCALLS - 1) {
+    panic("SYSCALL: Unknown syscall %d\n", syscall);
+  }
   kprintf("SYSCALL: Handling %s (%02x)\n", syscall_names[syscall], syscall);
   switch (syscall) {
   case SYSCALL__EXIT:
@@ -32,6 +36,9 @@ static void syscall_handler(struct isr_frame* frame) {
     return;
   case SYSCALL_GETCWD:
     syscall_getcwd(frame);
+    return;
+  case SYSCALL_READ:
+    syscall_read(frame);
     return;
   default:
     panic("SYSCALL: Unknown syscall %d\n", syscall);
