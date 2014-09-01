@@ -276,12 +276,13 @@ static int wait_for_bsy_to_drq(struct ide_controller* controller) {
 }
 
 int ide_read(int controller, int position, void* buffer, int lba, int nwords) {
+  int nwords_left = nwords;
   for (int i = 0; i < nwords; i += 255 * 2048) {
-    const int c = (nwords > 255 * 2048) ? 255 * 2048 : nwords;
+    const int c = (nwords_left > 255 * 2048) ? 255 * 2048 : nwords_left;
     if (!ide_read_internal(controller, position, (char*)buffer + i, lba + i / 2048, c)) {
       return 0;
     }
-    nwords -= c;
+    nwords_left -= c;
   }
   return 1;
 }

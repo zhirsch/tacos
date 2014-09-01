@@ -87,6 +87,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
         if (ptr == NULL) {
           PANIC("Unable to allocate memory to load file.\n");
         }
+        LOG("Need to read %08lx words from %d-%d at LBA %lx\n", extent_len / 2, controller, position, extent_pos);
         if (!ide_read(controller, position, ptr, extent_pos, extent_len / 2)) {
           LOG("Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
           kfree(ptr);

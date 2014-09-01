@@ -1,12 +1,12 @@
-#include "syscall/syscalls.h"
-
+#include <stddef.h>
 #include <stdint.h>
 
 #include "interrupts.h"
 #include "log.h"
 #include "screen.h"
+#include "syscall.h"
 
-#define LOG(...) log("SYSCALL[READ]", __VA_ARGS__)
+#define LOG(...) log("SYSCALL [READ]", __VA_ARGS__)
 
 static const char CMD[] = "env\n";
 static unsigned int pos = 0;
@@ -19,14 +19,10 @@ static int min(int a, int b) {
 }
 
 void syscall_read(struct isr_frame* frame) {
-  const uint32_t fd = frame->ebx;
-  const uintptr_t buf = frame->ecx;
-  uint32_t size = frame->edx;
-  LOG("fd=%ld, buf=%08lx, size=%08lx\n", fd, buf, size);
+  syscall_in3(frame, int, fd, "%d", void*, buf, "%8p", size_t, size, "%lx");
 
   if (pos >= __builtin_strlen(CMD) + 1) {
-    LOG("EOF\n");
-    frame->eax = 0;
+    syscall_out(frame, 0, "%ld");
     return;
   }
 
@@ -34,6 +30,5 @@ void syscall_read(struct isr_frame* frame) {
   __builtin_memcpy((void*)buf, CMD + pos, size);
   pos += size;
 
-  LOG("actually read %ld\n", size);
-  frame->eax = size;
+  syscall_out(frame, size, "%lx");
 }

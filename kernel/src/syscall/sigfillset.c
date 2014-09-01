@@ -1,18 +1,26 @@
-#include "syscall/syscalls.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
+#include "bits/errno.h"
 #include "bits/signal.h"
 
 #include "interrupts.h"
+#include "log.h"
+#include "syscall.h"
+
+#define LOG(...) log("SYSCALL [SIGFILLSET]", __VA_ARGS__)
 
 void syscall_sigfillset(struct isr_frame* frame) {
-  sigset_t* set = (sigset_t*)frame->ebx;
+  // Printf's %p needs a void*, so this work-around is needed to make GCC happy.
+  sigset_t* set;
+  syscall_in1(frame, void*, void_set, "%8p");
+  set = (sigset_t*)void_set;
+
   if (set == NULL) {
-    frame->eax = -14;  // EFAULT
+    syscall_out(frame, -EFAULT, "%ld");
     return;
   }
+
   __builtin_memset(set, 0xff, sizeof(*set));
-  frame->eax = 0;
+  syscall_out(frame, 0, "%ld");
 }

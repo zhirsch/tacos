@@ -1,41 +1,36 @@
-#include "syscall/syscalls.h"
+#include "bits/errno.h"
 
 #include "interrupts.h"
 #include "log.h"
 #include "process.h"
+#include "syscall.h"
 #include "tty.h"
 
-#define LOG(...) log("SYSCALL[TCGETPGRP]", __VA_ARGS__)
-#define PANIC(...) panic("SYSCALL[TCGETPGRP]", __VA_ARGS__)
+#define LOG(...) log("SYSCALL [TCGETPGRP]", __VA_ARGS__)
+#define PANIC(...) panic("SYSCALL [TCGETPGRP]", __VA_ARGS__)
 
 void syscall_tcgetpgrp(struct isr_frame* frame) {
-  const int fd = (int)frame->ebx;
-  LOG("fd=%d\n", fd);
+  syscall_in1(frame, int, fd, "%d");
 
   if (fd < 0 || fd > NUM_FDS) {
-    LOG("Invalid fd\n");
-    frame->eax = -9;  // EBADF
+    syscall_out(frame, -EBADF, "%ld");
     return;
   }
   if (!current_process->fds[fd].used) {
-    LOG("Unopened fd\n");
-    frame->eax = -9;  // EBADF
+    syscall_out(frame, -EBADF, "%ld");
     return;
   }
   if (current_process->fds[fd].tty == -1) {
-    LOG("No tty for fd\n");
-    frame->eax = -25;  // ENOTTY
+    syscall_out(frame, -ENOTTY, "%ld");
     return;
   }
   if (current_process->fds[fd].tty != current_process->tty) {
-    LOG("Not the controlling terminal\n");
-    frame->eax = -25;  // ENOTTY
+    syscall_out(frame, -ENOTTY, "%ld");
     return;
   }
   if (ttys[current_process->tty].pgid == -1) {
     PANIC("EDGE CASE: no pgid for tty\n");
   }
 
-  LOG("tty=%d, pgid=%d\n", current_process->tty, ttys[current_process->tty].pgid);
-  frame->eax = ttys[current_process->tty].pgid;
+  syscall_out(frame, ttys[current_process->tty].pgid, "%ld");
 }

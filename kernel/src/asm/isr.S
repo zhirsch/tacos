@@ -1,11 +1,40 @@
               .text
 prepare_isr_common:
+              //    Push general purpose registers.
               pusha
-              push  %esp            // Push the address of the isr_frame.
+              mov   %esp, %edx
+
+              //    Push segment selectors.
+              push  %ds
+              push  %es
+              push  %fs
+              push  %gs
+
+              //    Set the segment selectors to good values.
+              mov   $0x10, %ax
+              mov   %ax, %ds
+              mov   %ax, %es
+              mov   %ax, %fs
+              mov   %ax, %gs
+
+              //    Call isr_common with a pointer to the isr_frame.
+              push  %edx
               call  isr_common
-              add   $0x4, %esp      // Pop the address of the isr_frame.
+              add   $0x4, %esp
+
+              //    Pop the segment selectors.
+              pop %gs
+              pop %fs
+              pop %es
+              pop %ds
+
+              //    Pop the general purpose registers.
               popa
-              add   $0x8, %esp      // Pop vector and error code.
+
+              //    Pop vector and error code.
+              add   $0x8, %esp
+
+              //    Return to the caller.
               iret
 
               .macro define_isr n

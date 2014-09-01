@@ -1,19 +1,19 @@
-#include "syscall/syscalls.h"
-
 #include <stdint.h>
 
 #include "bits/types.h"
 
 #include "interrupts.h"
 #include "log.h"
-#include "screen.h"
+#include "syscall.h"
 
-#define LOG(...) log("SYSCALL[WAITPID]", __VA_ARGS__)
+#define LOG(...) log("SYSCALL [WAITPID]", __VA_ARGS__)
 
 void syscall_waitpid(struct isr_frame* frame) {
-  const pid_t pid = (pid_t)frame->ebx;
-  int* const status = (int*)frame->ecx;
-  const int options = (int)frame->edx;
-  LOG("pid=%d, status=%08lx, options=%08x\n", pid, (uintptr_t)status, options);
-  frame->eax = 0;  // TODO
+  // Printf's %p needs a void*, so this work-around is needed to make GCC happy.
+  //int* status;
+  syscall_in3(frame, pid_t, pid, "%d", void*, void_status, "%8p", int, options, "%08x");
+  //status = (int*)void_status;
+
+  // TODO
+  syscall_out(frame, 0, "%ld");
 }

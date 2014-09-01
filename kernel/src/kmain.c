@@ -18,7 +18,7 @@
 #include "screen.h"
 #include "snprintf.h"
 #include "ssp.h"
-#include "syscall/init.h"
+#include "syscall.h"
 #include "tss.h"
 #include "tty.h"
 
@@ -28,7 +28,6 @@
 static void init_tss(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
 static void exec_elf(const void* elf) __attribute__ ((noreturn));
-static void switch_to_ring3(struct process* process) __attribute__ ((noreturn));
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
@@ -284,9 +283,17 @@ static void exec_elf(const void* elf) {
   current_process = new_process;
 
   // Switch to the new process in ring 3.
-  switch_to_ring3(new_process);
+  {
+    extern void switch_to_ring3(uint16_t cs, uint32_t eip, uint16_t ss, uint32_t esp, uint32_t eflags) __attribute__ ((noreturn));
+    switch_to_ring3(new_process->tss.cs,
+                    new_process->tss.eip,
+                    new_process->tss.ss,
+                    new_process->tss.esp,
+                    new_process->tss.eflags);
+  }
 }
 
+#if 0
 static void switch_to_ring3(struct process* process) {
   // Set the data selectors.
   __asm__ __volatile__ ("mov %0, %%ds\n"
@@ -330,6 +337,7 @@ static void switch_to_ring3(struct process* process) {
 
   while (1) { }
 }
+#endif
 
 static void init_tss(void) {
   static struct tss tss __attribute__ ((aligned(PAGESIZE)));
