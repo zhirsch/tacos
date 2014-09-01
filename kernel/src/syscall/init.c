@@ -56,7 +56,6 @@ void init_syscalls(void) {
 static void syscall_handler(struct isr_frame* frame) {
   const uintptr_t syscall = frame->eax;
   if (syscall > sizeof(syscalls) || syscalls[syscall].func == NULL) {
-    print_call_stack(frame->eip, frame->ebp);
     PANIC("Unknown eax=%2ld\n", syscall);
     frame->eax = -38;  // ENOSYS
     return;

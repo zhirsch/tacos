@@ -4,6 +4,22 @@ prepare_isr_common:
               pusha
               mov   %esp, %edx
 
+              //    Emulate the frame pointer so that call stack traces work
+              //    across interrupts.
+              //
+              //    The interrupted eip:
+              mov   0x28(%esp), %ecx
+              //    Add 5 because this is the instruction that was interrupted,
+              //    not the return address of a call.  print_call_stack
+              //    subtracts 5 from the saved eip so that the printed address
+              //    is the call instruction.  Adding 5 undoes that.
+              add   $5, %ecx
+              push  %ecx
+              //    The interrupted ebp:
+              push  0x0c(%esp)
+              //    Set ebp to the stack.
+              mov   %esp, %ebp
+
               //    Push segment selectors.
               push  %ds
               push  %es
@@ -27,6 +43,9 @@ prepare_isr_common:
               pop %fs
               pop %es
               pop %ds
+
+              //    Remove the emulated frame pointer.
+              add   $0x8, %esp
 
               //    Pop the general purpose registers.
               popa
