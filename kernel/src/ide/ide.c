@@ -4,7 +4,7 @@
 
 #include "interrupts.h"
 #include "kmalloc.h"
-#include "kprintf.h"
+#include "log.h"
 #include "portio.h"
 
 #define NUM_CONTROLLERS 2
@@ -29,6 +29,8 @@
 #define ATA_COMMAND_IDENTIFY_DEVICE        0xEC
 #define ATA_COMMAND_PACKET                 0xA0
 #define ATA_COMMAND_IDENTIFY_PACKET_DEVICE 0xA1
+
+static int ide_read_internal(int controller, int position, void* buffer, int lba, int nwords);
 
 // A device attached to an IDE controller.
 struct ide_device {
@@ -226,10 +228,10 @@ void init_ide(void) {
         continue;
       }
 
-      kprintf("IDE: ATAPI CDROM detected at %d-%d\n", i, j);
-      kprintf("IDE:     serial:   %s\n", device->serial);
-      kprintf("IDE:     model:    %s\n", device->model);
-      kprintf("IDE:     firmware: %s\n", device->firmware);
+      log("IDE", "ATAPI CDROM detected at %d-%d\n", i, j);
+      log("IDE", "  serial:   %s\n", device->serial);
+      log("IDE", "  model:    %s\n", device->model);
+      log("IDE", "  firmware: %s\n", device->firmware);
     }
   }
 }
@@ -260,13 +262,13 @@ static int wait_for_bsy_to_drq(struct ide_controller* controller) {
 
   // Return false if ERR.
   if (status & ATA_STATUS_ERR) {
-    kprintf("IDE: error status: %02x", status);
+    log("IDE", "error status: %02x\n", status);
     return 0;
   }
 
   // Return false if not DRQ.
   if (!(status & ATA_STATUS_DRQ)) {
-    kprintf("IDE: unexpected status: %02x", status);
+    log("IDE", "unexpected status: %02x\n", status);
     return 0;
   }
 
@@ -274,9 +276,22 @@ static int wait_for_bsy_to_drq(struct ide_controller* controller) {
 }
 
 int ide_read(int controller, int position, void* buffer, int lba, int nwords) {
+  for (int i = 0; i < nwords; i += 255 * 2048) {
+    const int c = (nwords > 255 * 2048) ? 255 * 2048 : nwords;
+    if (!ide_read_internal(controller, position, (char*)buffer + i, lba + i / 2048, c)) {
+      return 0;
+    }
+    nwords -= c;
+  }
+  return 1;
+}
+
+static int ide_read_internal(int controller, int position, void* buffer, int lba, int nwords) {
   struct ide_device* device;
   int iobase;
   uint8_t packet[12];
+
+  log("IDE", "Reading %08x words starting at %d\n", nwords, lba);
 
   // Make sure that the device to read from is valid.
   if (controller >= NUM_CONTROLLERS || position >= NUM_DEVICES_PER_CONTROLLER) {

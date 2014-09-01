@@ -9,10 +9,9 @@
 #include "interrupts.h"
 #include "iso9660.h"
 #include "kmalloc.h"
-#include "kprintf.h"
+#include "log.h"
 #include "mmu.h"
 #include "multiboot.h"
-#include "panic.h"
 #include "pic.h"
 #include "portio.h"
 #include "process.h"
@@ -22,6 +21,9 @@
 #include "syscall/init.h"
 #include "tss.h"
 #include "tty.h"
+
+#define LOG(...) log("KMAIN", __VA_ARGS__)
+#define PANIC(...) panic("KMAIN", __VA_ARGS__)
 
 static void init_tss(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
@@ -76,17 +78,17 @@ static void start_init(const char* cmdline) {
   // at the end.
   initpath = __builtin_strstr(cmdline, " init=");
   if (initpath == NULL) {
-    panic("unable to find init=");
+    PANIC("unable to find init=");
   }
   initpath += __builtin_strlen(" init=");
-  kprintf("INIT: init program is \"%s\"\n", initpath);
+  LOG("init program is \"%s\"\n", initpath);
 
   // Load the init program from the CD-ROM at 0-0.
   init_vaddr = iso9660_load_file_from_atapi(0, 0, initpath);
   if (init_vaddr == NULL) {
-    panic("INIT: Unable to load init program\n");
+    PANIC("Unable to load init program\n");
   }
-  kprintf("INIT: %s loaded at %08lx\n", initpath, (uintptr_t)init_vaddr);
+  LOG("%s loaded at %08lx\n", initpath, (uintptr_t)init_vaddr);
 
   // Execute the init program.
   exec_elf(init_vaddr);
@@ -147,31 +149,31 @@ static void exec_elf(const void* elf) {
       ehdr->e_ident[1] != EI_MAG1 ||
       ehdr->e_ident[2] != EI_MAG2 ||
       ehdr->e_ident[3] != EI_MAG3) {
-    panic("ELF: Bad magic\n");
+    PANIC("Bad magic\n");
   }
   if (ehdr->e_ident[4] != ELFCLASS32) {
-    panic("ELF: Not ELFCLASS32\n");
+    PANIC("Not ELFCLASS32\n");
   }
   if (ehdr->e_ident[5] != ELFDATA2LSB) {
-    panic("ELF: Not ELFDATA2LSB\n");
+    PANIC("Not ELFDATA2LSB\n");
   }
   if (ehdr->e_ident[6] != EV_CURRENT) {
-    panic("ELF: Not EV_CURRENT\n");
+    PANIC("Not EV_CURRENT\n");
   }
   if (ehdr->e_type != ET_EXEC) {
-    panic("ELF: Not ET_EXEC\n");
+    PANIC("Not ET_EXEC\n");
   }
   if (ehdr->e_machine != EM_386) {
-    panic("ELF: Not EM_386\n");
+    PANIC("Not EM_386\n");
   }
   if (ehdr->e_version != EV_CURRENT) {
-    panic("ELF: Not EV_CURRENT\n");
+    PANIC("Not EV_CURRENT\n");
   }
   if (ehdr->e_phoff == 0) {
-    panic("ELF: No program header table\n");
+    PANIC("No program header table\n");
   }
 
-  kprintf("ELF: Entry point: %08lx\n", ehdr->e_entry);
+  LOG("Entry point: %08lx\n", ehdr->e_entry);
   new_process->tss.eip = ehdr->e_entry;
 
   // Process each of the program headers.
@@ -195,12 +197,12 @@ static void exec_elf(const void* elf) {
         perm = 0x3;  // rw-
         break;
       default:
-        panic("ELF: Unknown flags: %08lx\n", phdr->p_flags);
+        PANIC("Unknown flags: %08lx\n", phdr->p_flags);
       }
       while (dst < (phdr->p_vaddr + phdr->p_filesz)) {
         const uintptr_t paddr = (uintptr_t)mmu_get_paddr((void*)src);
-        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for %s\n", dst, paddr,
-                (perm == 0x1) ? "TEXT" : "DATA");
+        LOG("Mapping vaddr %08lx to paddr %08lx for %s\n", dst, paddr,
+            (perm == 0x1) ? "TEXT" : "DATA");
         // TODO(zhirsch): Duplicate pages that overlap segments.
         mmu_map_page((void*)paddr, (void*)dst, perm | 0x4);
         src += PAGESIZE;
@@ -209,18 +211,18 @@ static void exec_elf(const void* elf) {
       // Allocate additional pages for the BSS and zero it out.
       while (dst < (phdr->p_vaddr + phdr->p_memsz)) {
         const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
-        kprintf("ELF: Mapping vaddr %08lx to paddr %08lx for BSS\n", dst, paddr);
+        LOG("Mapping vaddr %08lx to paddr %08lx for BSS\n", dst, paddr);
         mmu_map_page((void*)paddr, (void*)dst, 0x3 | 0x4);
         dst += PAGESIZE;
       }
       if (bss_size > 0) {
-        kprintf("ELF: Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
+        LOG("Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
         __builtin_memset((void*)bss_base, 0, bss_size);
       }
       break;
     }
     default:
-      panic("ELF: unhandled program header type %lx\n", phdr->p_type);
+      PANIC("unhandled program header type %lx\n", phdr->p_type);
     }
     phdr++;
   }
@@ -232,7 +234,7 @@ static void exec_elf(const void* elf) {
 
   // Create the new program's stack.
   new_process->tss.esp = (uintptr_t)mmu_new_stack((void*)0xBF000000, 16, 1);
-  kprintf("ELF: Stack is at %08lx\n", (uintptr_t)new_process->tss.esp);
+  LOG("Stack is at %08lx\n", (uintptr_t)new_process->tss.esp);
 
   // Prepare argc, argv, and envp.
   {

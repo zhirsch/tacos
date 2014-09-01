@@ -3,20 +3,22 @@
 #include <stdint.h>
 
 #include "interrupts.h"
-#include "kprintf.h"
+#include "log.h"
 #include "process.h"
 
+#define LOG(...) log("SYSCALL[CLOSE]", __VA_ARGS__)
+
 void syscall_close(struct isr_frame* frame) {
-  const uint32_t fd = frame->ebx;
-  kprintf("CLOSE: fd=%ld\n", fd);
+  const int fd = (int)frame->ebx;
+  LOG("fd=%d\n", fd);
 
   if (fd > NUM_FDS) {
-    kprintf("CLOSE: Invalid fd\n");
+    LOG("Invalid fd\n");
     frame->eax = -9;  // EBADF
     return;
   }
   if (!current_process->fds[fd].used) {
-    kprintf("CLOSE: Unopened fd\n");
+    LOG("Unopened fd\n");
     frame->eax = -9;  // EBADF
     return;
   }

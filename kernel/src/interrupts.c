@@ -4,10 +4,12 @@
 #include <stdint.h>
 
 #include "dt.h"
-#include "kprintf.h"
-#include "panic.h"
+#include "log.h"
 #include "portio.h"
 #include "screen.h"
+
+#define LOG(...) log("INTERRUPTS", __VA_ARGS__)
+#define PANIC(...) panic("INTERRUPTS", __VA_ARGS__)
 
 static interrupt_handler_func handlers[256] = { NULL };
 
@@ -66,7 +68,7 @@ void init_interrupts(void) {
 
 void interrupt_register_handler(int vector, interrupt_handler_func func) {
   if (handlers[vector] != NULL) {
-    panic("Interrupt handler already registered for vector %d: %08lx\n",
+    PANIC("Handler already registered for vector %d: %08lx\n",
           vector, (uintptr_t)handlers[vector]);
   }
   handlers[vector] = func;
@@ -76,9 +78,9 @@ void isr_common(struct isr_frame* frame) {
   if (handlers[frame->vector] != NULL) {
     handlers[frame->vector](frame);
   } else {
-    kprintf("Interrupt! vector=%02x code=%08x\n", frame->vector, frame->error_code);
+    LOG("vector=%02x code=%08x\n", frame->vector, frame->error_code);
     print_call_stack(frame->eip, frame->ebp);
-    panic("  unhandled (%s)!\n", (exceptions[frame->vector] == NULL) ? "?" : exceptions[frame->vector]);
+    PANIC("  unhandled (%s)!\n", (exceptions[frame->vector] == NULL) ? "?" : exceptions[frame->vector]);
   }
 
   // EOI

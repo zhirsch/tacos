@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include "kprintf.h"
 #include "portio.h"
 
 static inline void send_command(uint8_t command, int pic);

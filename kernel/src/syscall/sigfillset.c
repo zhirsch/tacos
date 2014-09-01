@@ -6,7 +6,6 @@
 #include "bits/signal.h"
 
 #include "interrupts.h"
-#include "kprintf.h"
 
 void syscall_sigfillset(struct isr_frame* frame) {
   sigset_t* set = (sigset_t*)frame->ebx;

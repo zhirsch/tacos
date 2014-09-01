@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "log.h"
 #include "mmu.h"
-#include "panic.h"
 
 // Rename all the public functions to start with a "k".
 #define USE_DL_PREFIX
@@ -50,7 +50,7 @@
 #define malloc_getpagesize PAGESIZE
 
 // Define functions that kmalloc calls.
-#define ABORT                 panic("kmalloc failed\n");
+#define ABORT                 panic("KMALLOC", "failed\n");
 #define MALLOC_FAILURE_ACTION { } /* Do nothing */
 #define MORECORE              ksbrk
 

@@ -3,8 +3,11 @@
 #include <stddef.h>
 
 #include "interrupts.h"
-#include "panic.h"
+#include "log.h"
 #include "syscall/syscalls.h"
+
+#define LOG(...) log("SYSCALL", __VA_ARGS__)
+#define PANIC(...) panic("SYSCALL", __VA_ARGS__)
 
 struct {
   const char* name;
@@ -50,10 +53,10 @@ void init_syscalls(void) {
 static void syscall_handler(struct isr_frame* frame) {
   const uintptr_t syscall = frame->eax;
   if (syscall > sizeof(syscalls) || syscalls[syscall].func == NULL) {
-    panic("SYSCALL: Syscall %2ld is ENOSYS\n", syscall);
+    PANIC("Unknown eax=%2ld\n", syscall);
     frame->eax = -38;  // ENOSYS
     return;
   }
-  kprintf("SYSCALL: Syscall %2ld %s\n", syscall, syscalls[syscall].name);
+  LOG("Handling %s\n", syscalls[syscall].name);
   syscalls[syscall].func(frame);
 }

@@ -5,8 +5,10 @@
 #include "bits/fcntl.h"
 
 #include "interrupts.h"
-#include "kprintf.h"
+#include "log.h"
 #include "process.h"
+
+#define LOG(...) log("SYSCALL[FCNTL]", __VA_ARGS__)
 
 static int dupfd(int oldfd, int newfd);
 static int setfd(int fd, int val);
@@ -16,15 +18,15 @@ void syscall_fcntl(struct isr_frame* frame) {
   const int cmd = frame->ecx;
   const uint32_t arg = frame->edx;
 
-  kprintf("FCNTL: fd=%d, cmd=%08x, arg=%08lx\n", fd, cmd, arg);
+  LOG("fd=%d, cmd=%08x, arg=%08lx\n", fd, cmd, arg);
 
   if (fd < 0 || fd > NUM_FDS) {
-    kprintf("FCNTL: Invalid fd\n");
+    LOG("Invalid fd\n");
     frame->eax = -9;  // EBADF
     return;
   }
   if (!current_process->fds[fd].used) {
-    kprintf("FCNTL: Unopened fd\n");
+    LOG("Unopened fd\n");
     frame->eax = -9;  // EBADF
     return;
   }
@@ -47,18 +49,18 @@ static int dupfd(int oldfd, int newfd) {
     if (!current_process->fds[i].used) {
       __builtin_memcpy(current_process->fds + i, current_process->fds + oldfd,
                        sizeof(current_process->fds[i]));
-      kprintf("FCNTL: F_DUPFD %d to %d\n", oldfd, i);
+      LOG("F_DUPFD %d to %d\n", oldfd, i);
       return i;
     }
   }
-  kprintf("FCNTL: F_DUPFD is EMFILE\n");
+  LOG("F_DUPFD is EMFILE\n");
   return -24;  // EMFILE
 }
 
 static int setfd(int fd, int val) {
   switch (val) {
   case FD_CLOEXEC:
-    kprintf("FCNTL: Set cloexec for %d\n", fd);
+    LOG("Set cloexec for %d\n", fd);
     current_process->fds[fd].cloexec = 1;
     return 0;
   default:

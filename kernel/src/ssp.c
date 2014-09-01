@@ -1,4 +1,6 @@
-#include "panic.h"
+#include "log.h"
+
+#define PANIC(...) panic("SSP", __VA_ARGS__)
 
 unsigned long __stack_chk_guard;
 
@@ -7,5 +9,5 @@ void init_ssp(void) {
 }
 
 void __attribute__((noreturn)) __stack_chk_fail(void) {
-  panic("stack smashed!\n");
+  PANIC("stack smashed!\n");
 }

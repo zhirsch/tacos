@@ -5,10 +5,12 @@
 
 #include "interrupts.h"
 #include "kmalloc.h"
-#include "kprintf.h"
+#include "log.h"
 #include "multiboot.h"
-#include "panic.h"
 #include "sbrk.h"
+
+#define LOG(...) log("MMU", __VA_ARGS__)
+#define PANIC(...) panic("MMU", __VA_ARGS__)
 
 // The sentinel that marks the bottom of the paddr stack.
 #define PADDR_STACK_SENTINEL 0xDEADBEEF
@@ -69,7 +71,7 @@ static uintptr_t kernel_program_break = 0xE0000000;
 
 void init_mmu(multiboot_info_t* mbi) {
   if (!(mbi->flags & 0x1)) {
-    panic("MMU: multiboot doesn't provide mem_*\n");
+    PANIC("multiboot doesn't provide mem_*\n");
   }
 
   // Register the page fault handler.
@@ -109,7 +111,7 @@ static void init_paddr_stack(multiboot_info_t* mbi) {
   // Set the top of the stack.
   paddr_stack_top_paddr = PADDR(paddr_stack);
 
-  kprintf("MMU: %d bytes available (%d pages)\n", pages * PAGESIZE, pages);
+  LOG("%d bytes available (%d pages)\n", pages * PAGESIZE, pages);
 }
 
 static void init_paging(void) {
@@ -152,7 +154,7 @@ static void init_paging(void) {
 void* mmu_acquire_physical_page(void) {
   const uintptr_t paddr = *(paddr_stack--);
   if (paddr == PADDR_STACK_SENTINEL) {
-    panic("MMU: out of physical pages\n");
+    PANIC("out of physical pages\n");
   }
   return (void*)paddr;
 }
@@ -164,7 +166,7 @@ void mmu_release_physical_page(void* paddr) {
 void* mmu_get_paddr(const void* vaddr) {
   const uint32_t pte = PTE(vaddr);
   if (!(pte & 0x1)) {
-    panic("MMU: mmu_get_paddr(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
+    PANIC("mmu_get_paddr(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
   }
   return (void*)(pte & 0xfffff000);
 }
@@ -182,7 +184,7 @@ void* mmu_unmap_page(void* vaddr) {
   const uint32_t pte = PTE(vaddr);
   void* paddr;
   if (!(pte & 0x1)) {
-    panic("MMU: mmu_unmap_page(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
+    PANIC("mmu_unmap_page(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
   }
   paddr = (void*)(pte & 0xfffff000);
   PTE(vaddr) = 0;
@@ -241,7 +243,7 @@ void* ksbrk(intptr_t increment) {
   const uintptr_t vaddr = kernel_program_break;
   // Make sure that a multiple of a page was requested.
   if (increment & (PAGESIZE - 1)) {
-    panic("MMU: ksbrk(%lx) is not page aligned\n", increment);
+    PANIC("ksbrk(%lx) is not page aligned\n", increment);
   } else if (increment < 0) {
     sbrk_shrink(&kernel_program_break, -increment);
   } else if (increment > 0) {
@@ -253,13 +255,13 @@ void* ksbrk(intptr_t increment) {
 static void page_fault_handler(struct isr_frame* frame) {
   uintptr_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  kprintf("Page fault! code=%08x eip=%08lx addr=%08lx\n", frame->error_code, frame->eip, cr2);
+  LOG("Page fault! code=%08x eip=%08lx addr=%08lx\n", frame->error_code, frame->eip, cr2);
   print_call_stack(frame->eip, frame->ebp);
   if ((uintptr_t)&kernel_stack_bottom_fence <= cr2 && cr2 < (uintptr_t)&kernel_stack_bottom) {
-    panic("    kernel stack overflow\n");
+    PANIC("  kernel stack overflow\n");
   } else if ((uintptr_t)&kernel_stack_top <= cr2 && cr2 < (uintptr_t)&kernel_stack_top_fence) {
-    panic("    kernel stack underflow\n");
+    PANIC("  kernel stack underflow\n");
   } else {
-    panic("    unknown reason\n");
+    PANIC("  unknown reason\n");
   }
 }

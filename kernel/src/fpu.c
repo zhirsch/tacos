@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include "kprintf.h"
 #include "interrupts.h"
 
 static void no_device_available_handler(struct isr_frame* frame);

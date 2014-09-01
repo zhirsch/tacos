@@ -5,8 +5,11 @@
 
 #include "ide/ide.h"
 #include "kmalloc.h"
-#include "kprintf.h"
+#include "log.h"
 #include "mmu.h"
+
+#define LOG(...) log("ISO9660", __VA_ARGS__)
+#define PANIC(...) panic("ISO9660", __VA_ARGS__)
 
 #define BUFFER_SIZE 2048
 
@@ -15,7 +18,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
   uint8_t* buffer;
 
   if (path[0] != '/') {
-    kprintf("ISO9660: Load path %s does not start with a slash\n", path);
+    LOG("Load path %s does not start with a slash\n", path);
     return NULL;
   }
 
@@ -24,7 +27,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
   while (1) {
     int lba = 0x10;
     if (!ide_read(controller, position, buffer, lba, BUFFER_SIZE / 2)) {
-      kprintf("ISO9660: Read from %d-%d at LBA %x of %x bytes failed\n", controller, position, lba, BUFFER_SIZE);
+      LOG("Read from %d-%d at LBA %x of %x bytes failed\n", controller, position, lba, BUFFER_SIZE);
       kfree(buffer);
       return NULL;
     }
@@ -34,7 +37,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       __builtin_memcpy(&extent_len, buffer + 156 + 10, 4);
       break;
     } else if (buffer[0] == 0xff) {
-      kprintf("ISO9660: No primary volume descriptor found on %d-%d\n", controller, position);
+      LOG("No primary volume descriptor found on %d-%d\n", controller, position);
       kfree(buffer);
       return NULL;
     }
@@ -44,7 +47,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
     int i = 0;
 
     if (!ide_read(controller, position, buffer, extent_pos, extent_len / 2)) {
-      kprintf("ISO9660: Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
+      LOG("Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
       kfree(buffer);
       return NULL;
     }
@@ -82,10 +85,10 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
         __builtin_memcpy(&extent_len, p + 10, 4);
         ptr = kmemalign(PAGESIZE, extent_len);
         if (ptr == NULL) {
-          panic("ISO9660: Unable to allocate memory to load file.\n");
+          PANIC("Unable to allocate memory to load file.\n");
         }
         if (!ide_read(controller, position, ptr, extent_pos, extent_len / 2)) {
-          kprintf("ISO9960: Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
+          LOG("Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
           kfree(ptr);
           kfree(buffer);
           return NULL;
@@ -101,7 +104,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       }
     }
     if (buffer[i] == 0) {
-      kprintf("SAD FACE!\n");
+      LOG("SAD FACE!\n");
       kfree(buffer);
       return NULL;
     }

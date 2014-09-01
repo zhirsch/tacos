@@ -18,7 +18,7 @@
 #define SYSCALL_getgid      13
 //#define SYSCALL_getgroups   14
 #define SYSCALL_getpgid     15
-/* #define SYSCALL_getpgrp     16 */
+// 16
 #define SYSCALL_getpid      17
 #define SYSCALL_getppid     18
 #define SYSCALL_getuid      19
