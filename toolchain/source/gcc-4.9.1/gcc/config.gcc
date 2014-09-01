@@ -867,6 +867,19 @@ case ${target} in
     *) echo 'Unknown thread configuration for VxWorks'; exit 1 ;;
   esac
   ;;
+*-*-tacoskernel*)
+  gas=yes
+  gnu_ld=yes
+  # Assume that newlib is being used and so __cxa_atexit is provided.
+  default_use_cxa_atexit=yes
+  use_gcc_stdint=provide
+  ;;
+*-*-tacos*)
+  gas=yes
+  gnu_ld=yes
+  # Assume that newlib is being used and so __cxa_atexit is provided.
+  default_use_cxa_atexit=yes
+  ;;
 *-*-elf|arc*-*-elf*)
   # Assume that newlib is being used and so __cxa_atexit is provided.
   default_use_cxa_atexit=yes
@@ -1341,6 +1354,9 @@ x86_64-*-darwin*)
 	;;
 i[34567]86-*-elf*)
 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h"
+	;;
+i[34567]86-*-tacos*)
+	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/i386tacos.h"
 	;;
 x86_64-*-elf*)
 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h"
