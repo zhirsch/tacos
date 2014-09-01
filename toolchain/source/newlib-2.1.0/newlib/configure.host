@@ -468,6 +468,10 @@ case "${host}" in
 	##newlib_cflags="${newlib_cflags} -idirafter ${gcc_dir}include"
 	;;
 
+  i[34567]86-*-tacos*)
+        sys_dir=tacos
+        ;;
+
   m68hc11-*-*|m6811-*-*|m6812-*-*|m68hc12-*-*)
 	;;
 
