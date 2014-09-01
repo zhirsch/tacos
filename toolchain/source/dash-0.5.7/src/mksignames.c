@@ -24,9 +24,8 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#if !defined (NSIG)
-#  define NSIG 64
-#endif
+#undef NSIG
+#define NSIG 32
 
 /*
  * Special traps:
