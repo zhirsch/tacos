@@ -7,6 +7,7 @@
 #include "kmalloc.h"
 #include "log.h"
 #include "mmu.h"
+#include "string.h"
 
 #define LOG(...) log("ISO9660", __VA_ARGS__)
 #define PANIC(...) panic("ISO9660", __VA_ARGS__)
@@ -32,9 +33,9 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       return NULL;
     }
     if (buffer[0] == 0x1) {
-      path += __builtin_strlen("/");
-      __builtin_memcpy(&extent_pos, buffer + 156 +  2, 4);
-      __builtin_memcpy(&extent_len, buffer + 156 + 10, 4);
+      path += strlen("/");
+      memcpy(&extent_pos, buffer + 156 +  2, 4);
+      memcpy(&extent_len, buffer + 156 + 10, 4);
       break;
     } else if (buffer[0] == 0xff) {
       LOG("No primary volume descriptor found on %d-%d\n", controller, position);
@@ -62,7 +63,7 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       const char* name = (const char*)(p + 33);
       const uint8_t namelen = p[32];
       i += p[0];
-      if (__builtin_strlen(path) < namelen) {
+      if (strlen(path) < namelen) {
         continue;
       }
       {
@@ -81,8 +82,8 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       }
       if (path[namelen] == '\0' && !(p[25] & 0x2)) {
         void* ptr;
-        __builtin_memcpy(&extent_pos, p +  2, 4);
-        __builtin_memcpy(&extent_len, p + 10, 4);
+        memcpy(&extent_pos, p +  2, 4);
+        memcpy(&extent_len, p + 10, 4);
         ptr = kmemalign(PAGESIZE, extent_len);
         if (ptr == NULL) {
           PANIC("Unable to allocate memory to load file.\n");
@@ -99,8 +100,8 @@ void* iso9660_load_file_from_atapi(int controller, int position, const char* pat
       }
       if (path[namelen] == '/') {
         path += namelen + 1;
-        __builtin_memcpy(&extent_pos, p +  2, 4);
-        __builtin_memcpy(&extent_len, p + 10, 4);
+        memcpy(&extent_pos, p +  2, 4);
+        memcpy(&extent_len, p + 10, 4);
         break;
       }
     }

@@ -1,5 +1,7 @@
 #include "kmalloc.h"
 
+#include "string.h"
+
 /*------------------------------ internal #includes ---------------------- */
 
 #ifdef _MSC_VER
@@ -3367,7 +3369,7 @@ void* dlcalloc(size_t n_elements, size_t elem_size) {
   }
   mem = dlmalloc(req);
   if (mem != 0 && calloc_must_clear(mem2chunk(mem)))
-    __builtin_memset(mem, 0, req);
+    memset(mem, 0, req);
   return mem;
 }
 
@@ -3604,7 +3606,7 @@ static void** ialloc(mstate m,
   assert(!is_mmapped(p));
 
   if (opts & 0x2) {       /* optionally clear the elements */
-    __builtin_memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
+    memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
   }
 
   /* If not provided, allocate the pointer array as final part of chunk */
@@ -3786,7 +3788,7 @@ void* dlrealloc(void* oldmem, size_t bytes) {
         mem = internal_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
-          __builtin_memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
+          memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
           internal_free(m, oldmem);
         }
       }

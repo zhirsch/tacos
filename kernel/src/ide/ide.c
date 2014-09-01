@@ -6,6 +6,7 @@
 #include "kmalloc.h"
 #include "log.h"
 #include "portio.h"
+#include "string.h"
 
 #define NUM_CONTROLLERS 2
 #define NUM_DEVICES_PER_CONTROLLER 2
@@ -186,11 +187,11 @@ static void identify_ide_device(struct ide_device* device) {
   }
 
   // Set the device metadata.
-  __builtin_memcpy(device->model, buffer + 27, sizeof(device->model) - 1);
+  memcpy(device->model, buffer + 27, sizeof(device->model) - 1);
   fix_string(device->model, sizeof(device->model));
-  __builtin_memcpy(device->serial, buffer + 10, sizeof(device->serial) - 1);
+  memcpy(device->serial, buffer + 10, sizeof(device->serial) - 1);
   fix_string(device->serial, sizeof(device->serial));
-  __builtin_memcpy(device->firmware, buffer + 23, sizeof(device->firmware) - 1);
+  memcpy(device->firmware, buffer + 23, sizeof(device->firmware) - 1);
   fix_string(device->firmware, sizeof(device->firmware));
 
   kfree(buffer);

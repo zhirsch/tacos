@@ -8,6 +8,7 @@
 #include "log.h"
 #include "multiboot.h"
 #include "sbrk.h"
+#include "string.h"
 
 #define LOG(...) log("MMU", __VA_ARGS__)
 #define PANIC(...) panic("MMU", __VA_ARGS__)
@@ -201,7 +202,7 @@ uintptr_t mmu_new_page_directory(void) {
   // kernel mappings.
   // TODO(zhirsch): Make sure that all the PDEs are populated so that every
   // process gets a consistent view.
-  __builtin_memcpy((void*)0xB0000C00, (void*)0xFFFFFC00, PAGESIZE / 4);
+  memcpy((void*)0xB0000C00, (void*)0xFFFFFC00, PAGESIZE / 4);
 
   // Map the new page directory as the last entry so that the page directory can
   // easily be refernced.

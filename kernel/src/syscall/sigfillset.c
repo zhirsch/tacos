@@ -6,6 +6,7 @@
 
 #include "interrupts.h"
 #include "log.h"
+#include "string.h"
 #include "syscall.h"
 
 #define LOG(...) log("SYSCALL [SIGFILLSET]", __VA_ARGS__)
@@ -21,6 +22,6 @@ void syscall_sigfillset(struct isr_frame* frame) {
     return;
   }
 
-  __builtin_memset(set, 0xff, sizeof(*set));
+  *set = (sigset_t)-1;
   syscall_out(frame, 0, "%ld");
 }

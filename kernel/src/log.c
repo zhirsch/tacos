@@ -6,9 +6,10 @@
 
 #include "portio.h"
 #include "snprintf.h"
+#include "string.h"
 
 static void output(const char* str) {
-  for (size_t i = 0; i < __builtin_strlen(str); i++) {
+  for (size_t i = 0; i < strlen(str); i++) {
     outb(0xE9, str[i]);
   }
 }

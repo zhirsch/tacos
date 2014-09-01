@@ -6,6 +6,7 @@
 #include "interrupts.h"
 #include "log.h"
 #include "process.h"
+#include "string.h"
 #include "syscall.h"
 
 #define LOG(...) log("SYSCALL [FCNTL]", __VA_ARGS__)
@@ -41,8 +42,7 @@ void syscall_fcntl(struct isr_frame* frame) {
 static int dupfd(int oldfd, int newfd) {
   for (int i = newfd; i < NUM_FDS; i++) {
     if (!current_process->fds[i].used) {
-      __builtin_memcpy(current_process->fds + i, current_process->fds + oldfd,
-                       sizeof(current_process->fds[i]));
+      current_process->fds[i] = current_process->fds[oldfd];
       return i;
     }
   }

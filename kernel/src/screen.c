@@ -5,6 +5,7 @@
 
 #include "portio.h"
 #include "snprintf.h"
+#include "string.h"
 
 #define VGAMEMBASE ((uint16_t*)0x000B8000)
 #define MAXLINES 25
@@ -64,7 +65,7 @@ static void scroll(void) {
   }
 
   // Move lines 1 through MAXLINES up one.
-  __builtin_memcpy(VGAMEMBASE, VGAMEMBASE + MAXCOLS, (MAXLINES - 1) * MAXCOLS * 2);
+  memcpy(VGAMEMBASE, VGAMEMBASE + MAXCOLS, (MAXLINES - 1) * MAXCOLS * 2);
 
   // Blank out the last line.
   for (int i = 0; i < MAXCOLS; i++) {

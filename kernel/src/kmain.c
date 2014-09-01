@@ -18,6 +18,7 @@
 #include "screen.h"
 #include "snprintf.h"
 #include "ssp.h"
+#include "string.h"
 #include "syscall.h"
 #include "tss.h"
 #include "tty.h"
@@ -42,7 +43,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   // Copy the command line into a buffer with a valid virtual address.  The boot
   // loader stores a physical address in mbi->cmdline, which won't be accessible
   // after init_mmu.
-  __builtin_strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
+  strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
   cmdline[sizeof(cmdline)-1] = '\0';
 
   // Announce the OS.
@@ -75,11 +76,11 @@ static void start_init(const char* cmdline) {
   // Parse the command line to find the name of the init program.
   // TODO(zhirsch): Allow for init= to be anywhere in the command line, not just
   // at the end.
-  initpath = __builtin_strstr(cmdline, " init=");
+  initpath = strstr(cmdline, " init=");
   if (initpath == NULL) {
     PANIC("unable to find init=");
   }
-  initpath += __builtin_strlen(" init=");
+  initpath += strlen(" init=");
   LOG("init program is \"%s\"\n", initpath);
 
   // Load the init program from the CD-ROM at 0-0.
@@ -104,7 +105,7 @@ static void exec_elf(const void* elf) {
 
   // Create space for the new process struct.
   new_process = kmalloc(sizeof(*new_process));
-  __builtin_memset(new_process, 0, sizeof(*new_process));
+  memset(new_process, 0, sizeof(*new_process));
   new_process->pid = 1;
   new_process->ppid = 0;
   new_process->pgid = 1;
@@ -216,7 +217,7 @@ static void exec_elf(const void* elf) {
       }
       if (bss_size > 0) {
         LOG("Clearing %08lx bytes of the BSS starting at %08lx\n", bss_size, bss_base);
-        __builtin_memset((void*)bss_base, 0, bss_size);
+        memset((void*)bss_base, 0, bss_size);
       }
       break;
     }
@@ -355,7 +356,7 @@ static void init_tss(void) {
   gdt[5].granularity = 0;
   gdt[5].base_hi     = (((uintptr_t)(&tss)) & 0xFF000000) >> 24;
 
-  __builtin_memset(&tss, 0, sizeof(tss));
+  memset(&tss, 0, sizeof(tss));
   tss.ss0  = 0x10;
   tss.esp0 = (uintptr_t)&kernel_stack_top;
 

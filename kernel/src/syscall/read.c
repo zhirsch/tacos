@@ -4,6 +4,7 @@
 #include "interrupts.h"
 #include "log.h"
 #include "screen.h"
+#include "string.h"
 #include "syscall.h"
 
 #define LOG(...) log("SYSCALL [READ]", __VA_ARGS__)
@@ -21,13 +22,13 @@ static int min(int a, int b) {
 void syscall_read(struct isr_frame* frame) {
   syscall_in3(frame, int, fd, "%d", void*, buf, "%8p", size_t, size, "%lx");
 
-  if (pos >= __builtin_strlen(CMD) + 1) {
+  if (pos >= strlen(CMD) + 1) {
     syscall_out(frame, 0, "%ld");
     return;
   }
 
-  size = min(size, __builtin_strlen(CMD) + 1 - pos);
-  __builtin_memcpy((void*)buf, CMD + pos, size);
+  size = min(size, strlen(CMD) + 1 - pos);
+  memcpy((void*)buf, CMD + pos, size);
   pos += size;
 
   syscall_out(frame, size, "%lx");

@@ -29,10 +29,10 @@ void syscall_sigaction(struct isr_frame* frame) {
   }
 
   if (oldact != NULL) {
-    __builtin_memcpy(oldact, current_process->sigactions + signum, sizeof(*oldact));
+    *oldact = current_process->sigactions[signum];
   }
   if (act != NULL) {
-    __builtin_memcpy(current_process->sigactions + signum, act, sizeof(*act));
+    current_process->sigactions[signum] = *act;
   }
   syscall_out(frame, 0, "%ld");
 }
