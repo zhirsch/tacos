@@ -1,5 +1,4 @@
 # Builds the toolchain for building the tacos kernel.
-# Based off of http://wiki.osdev.org/GCC_Cross-Compiler
 
 set -ex
 
@@ -12,34 +11,13 @@ ROOT=$(readlink -f $(dirname $0))
 SOURCE=$ROOT/source
 BUILD=$ROOT/build
 PREFIX=$ROOT/install
-KERNEL_TARGET=i686-pc-tacoskernel
 TARGET=i686-pc-tacos
+KERNEL_TARGET=${TARGET}kernel
 
-rm -rf $SOURCE
 rm -rf $BUILD
 rm -rf $PREFIX
 
-mkdir -p $SOURCE
-pushd $SOURCE
-#curl http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2 | tar jx
-cat $ROOT/binutils-$BINUTILS_VERSION.tar.bz2 | tar jx
-patch -d binutils-$BINUTILS_VERSION -p1 < ../binutils-$BINUTILS_VERSION.patch
-#curl http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2 | tar jx
-cat $ROOT/gcc-$GCC_VERSION.tar.bz2 | tar jx
-patch -d gcc-$GCC_VERSION -p1 < ../gcc-$GCC_VERSION.patch
-#curl ftp://sourceware.org/pub/newlib/newlib-$NEWLIB_VERSION.tar.gz | tar zx
-cat $ROOT/newlib-$NEWLIB_VERSION.tar.gz | tar zx
-patch -d newlib-$NEWLIB_VERSION -p1 < ../newlib-$NEWLIB_VERSION.patch
-cat $ROOT/dash-$DASH_VERSION.tar.gz | tar zx
-patch -d dash-$DASH_VERSION -p1 < ../dash-$DASH_VERSION.patch
-popd
-
-pushd $SOURCE/newlib-$NEWLIB_VERSION
-cd newlib/libc/sys
-autoconf
-cd tacos
-ACLOCAL=aclocal-1.10 AUTOMAKE=automake-1.10 autoreconf
-popd
+export PATH=$PATH:$PREFIX/bin
 
 mkdir $BUILD
 cd $BUILD
@@ -94,13 +72,13 @@ popd
 # Newlib
 mkdir newlib
 pushd newlib
-PATH=$PATH:$PREFIX/bin $SOURCE/newlib-$NEWLIB_VERSION/configure \
+$SOURCE/newlib-$NEWLIB_VERSION/configure \
     --target=$TARGET \
     --prefix=$PREFIX \
     --disable-nls \
     CFLAGS='-fno-omit-frame-pointer -g3 -D_I386MACH_ALLOW_HW_INTERRUPTS'
-PATH=$PATH:$PREFIX/bin make -j4
-PATH=$PATH:$PREFIX/bin make install
+make -j4
+make install
 popd
 # GCC full
 pushd gcc
@@ -115,12 +93,13 @@ make install-strip
 popd
 
 # --- Build user space programs.
+# Dash
 mkdir dash
 pushd dash
-PATH=$PATH:$PREFIX/bin $SOURCE/dash-$DASH_VERSION/configure \
-    --host=i686-pc-tacos \
+$SOURCE/dash-$DASH_VERSION/configure \
+    --host=$TARGET \
     --prefix=$PREFIX \
     CFLAGS='-fno-omit-frame-pointer -g3'
-PATH=$PATH:$PREFIX/bin make -j4
-PATH=$PATH:$PREFIX/bin make install
+make -j4
+make install
 popd
