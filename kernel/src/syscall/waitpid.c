@@ -11,7 +11,7 @@
 void syscall_waitpid(struct isr_frame* frame) {
   // Printf's %p needs a void*, so this work-around is needed to make GCC happy.
   //int* status;
-  syscall_in3(frame, pid_t, pid, "%d", void*, void_status, "%8p", int, options, "%08x");
+  syscall_in3(frame, pid_t, pid, "%ld", void*, void_status, "%8p", int, options, "%08x");
   //status = (int*)void_status;
 
   // TODO

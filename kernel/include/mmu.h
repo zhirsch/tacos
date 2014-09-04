@@ -8,6 +8,15 @@
 // The size of each page.
 #define PAGESIZE 4096
 
+#define SEGMENT_KERNEL_CODE ((1 << 3) | 0x0)
+#define SEGMENT_KERNEL_DATA ((2 << 3) | 0x0)
+#define SEGMENT_USER_CODE   ((3 << 3) | 0x3)
+#define SEGMENT_USER_DATA   ((4 << 3) | 0x3)
+
+static inline uintptr_t mmu_round_to_next_page(uintptr_t addr) {
+  return (addr & ~(PAGESIZE - 1)) + (addr % PAGESIZE > 0) * PAGESIZE;
+}
+
 // Initialize the MMU.  Should only be called once.
 void init_mmu(multiboot_info_t* mbi);
 
@@ -30,16 +39,14 @@ void mmu_map_page(void* paddr, void* vaddr, int flags);
 // address of the physical page that was mapped.
 void* mmu_unmap_page(void* vaddr);
 
-// Create a new page directory.  The kernel is mapped in, but nothing else.
-uintptr_t mmu_new_page_directory(void);
+// Sets the flags for the page.
+void mmu_set_page_flags(void* vaddr, int flags);
 
-// Create a new stack.  The stack itself is protected by fence_pages on both the
-// top and the bottom.  The return address is the top of the stack (the highest
-// mapped address).
-void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages);
+// Gets the value of the cr3 register.
+uintptr_t mmu_get_cr3(void);
 
-// Switch to a different page directory.
-void mmu_switch_page_directory(uintptr_t cr3);
+// Unmaps all pages in the current page directory, except for the kernel.
+void mmu_reset_cr3(void);
 
 // Kernel's implemnetation of sbrk.
 void* ksbrk(intptr_t increment);

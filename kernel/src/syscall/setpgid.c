@@ -9,7 +9,7 @@
 #define PANIC(...) panic("SYSCALL [SETPGID]", __VA_ARGS__)
 
 void syscall_setpgid(struct isr_frame* frame) {
-  syscall_in2(frame, pid_t, pid, "%d", pid_t, pgid, "%d");
+  syscall_in2(frame, pid_t, pid, "%ld", pid_t, pgid, "%ld");
 
   if (pid == 0) {
     pid = current_process->pid;

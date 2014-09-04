@@ -100,7 +100,7 @@ newlib: gcc-bootstrap
 	$(call configure, $(SOURCE)/newlib-$(NEWLIB_VERSION)/configure \
 	    --target=$(TARGET) \
 	    --prefix=$(PREFIX) \
-	    CFLAGS='-fno-omit-frame-pointer -g3 -D_I386MAC_ALLOW_HW_INTERRUPTS')
+	    CFLAGS='-fno-omit-frame-pointer -g3 -D_I386MACH_ALLOW_HW_INTERRUPTS')
 	$(call build, make -j4)
 	$(call install, make install)
 

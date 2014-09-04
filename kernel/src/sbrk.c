@@ -39,7 +39,6 @@ void sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   // pages to cover the increment.
   while (increment >= PAGESIZE) {
     const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
-    LOG("Mapping vaddr %08lx to paddr %08lx\n", *cpb, paddr);
     mmu_map_page((void*)paddr, (void*)*cpb, 0x1 | 0x2 | 0x4);
     *cpb += PAGESIZE;
     increment -= PAGESIZE;
@@ -47,7 +46,6 @@ void sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   // Handle any amount that's greater than a multiple of PAGESIZE.
   if (increment > 0) {
     const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
-    LOG("Mapping vaddr %08lx to paddr %08lx\n", *cpb, paddr);
     mmu_map_page((void*)paddr, (void*)*cpb, 0x1 | 0x2 | 0x4);
     *cpb += increment;
     increment = 0;
@@ -85,7 +83,6 @@ void sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   // pages to cover the increment.
   while (decrement >= PAGESIZE) {
     const uintptr_t paddr = (uintptr_t)mmu_unmap_page((void*)*cpb);
-    LOG("Unmapping vaddr %08lx from paddr %08lx\n", *cpb, paddr);
     mmu_release_physical_page((void*)paddr);
     *cpb -= PAGESIZE;
     decrement -= PAGESIZE;
@@ -93,7 +90,6 @@ void sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   // Handle any amount that's greater than a multiple of PAGESIZE.
   if (decrement > 0) {
     *cpb -= decrement;
-    LOG("Shrinking break to partial page at vaddr %08lx\n", *cpb);
     decrement = 0;
   }
 

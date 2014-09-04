@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 #include "bits/errno.h"
@@ -21,7 +22,7 @@ void syscall_fcntl(struct isr_frame* frame) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
-  if (!current_process->fds[fd].used) {
+  if (current_process->fds[fd].file == NULL) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
@@ -41,7 +42,7 @@ void syscall_fcntl(struct isr_frame* frame) {
 
 static int dupfd(int oldfd, int newfd) {
   for (int i = newfd; i < NUM_FDS; i++) {
-    if (!current_process->fds[i].used) {
+    if (current_process->fds[i].file == NULL) {
       current_process->fds[i] = current_process->fds[oldfd];
       return i;
     }
@@ -52,7 +53,7 @@ static int dupfd(int oldfd, int newfd) {
 static int setfd(int fd, int val) {
   switch (val) {
   case FD_CLOEXEC:
-    current_process->fds[fd].cloexec = 1;
+    current_process->fds[fd].mode |= FD_CLOEXEC;
     return 0;
   default:
     return -ERANGE;

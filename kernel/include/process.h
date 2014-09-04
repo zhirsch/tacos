@@ -11,6 +11,8 @@
 
 #define NUM_FDS 16
 
+#define PGID_NONE 0
+
 struct process {
   // The pids of this process, its parent, and its process group.
   pid_t pid;
@@ -28,14 +30,16 @@ struct process {
 
   // The file descriptor table.
   struct {
-    int used;
-    int flags;
-    int tty;
-    int cloexec;
+    struct file* file;
+    mode_t mode;
   } fds[NUM_FDS];
 
   // The signal actions.
   struct sigaction sigactions[NUM_SIGNALS];
+
+  int argc;
+  char** argv;
+  char** envp;
 
   // The current working directory for the process.
   const char* cwd;
@@ -55,5 +59,8 @@ struct process {
 
 // The current running process.
 extern struct process* current_process;
+
+pid_t process_next_pid(void);
+pid_t process_next_pgid(void);
 
 #endif /* PROCESS_H */

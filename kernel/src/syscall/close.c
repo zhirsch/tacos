@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 #include "bits/errno.h"
@@ -16,11 +17,12 @@ void syscall_close(struct isr_frame* frame) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
-  if (!current_process->fds[fd].used) {
+  if (current_process->fds[fd].file == NULL) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
 
-  current_process->fds[fd].used = 0;
+  // TODO
+  /* current_process->fds[fd].used = 0; */
   syscall_out(frame, 0, "%ld");
 }

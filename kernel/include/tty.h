@@ -3,11 +3,12 @@
 
 #include "bits/types.h"
 
+#define NUM_TTYS 1
+#define TTY_NONE -1
+
 struct tty {
   pid_t pgid;
 };
-
-#define NUM_TTYS 1
 
 extern struct tty ttys[NUM_TTYS];
 

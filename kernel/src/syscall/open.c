@@ -10,6 +10,6 @@
 #define LOG(...) log("SYSCALL [OPEN]", __VA_ARGS__)
 
 void syscall_open(struct isr_frame* frame) {
-  syscall_in3(frame, const char*, pathname, "%s", int, flags, "%08x", mode_t, mode, "%08x");
+  syscall_in3(frame, const char*, pathname, "%s", int, flags, "%08x", mode_t, mode, "%08lx");
   syscall_out(frame, -ENOENT, "%ld");
 }

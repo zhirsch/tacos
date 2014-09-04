@@ -1,6 +1,8 @@
 #ifndef ELF_H
 #define ELF_H
 
+#include <stdint.h>
+
 #define EI_NIDENT   16
 #define EI_MAG0     0x7f
 #define EI_MAG1     'E'
@@ -52,5 +54,9 @@ struct Elf32_Phdr {
   Elf32_Word p_flags;
   Elf32_Word p_align;
 };
+
+// Replaces the current process with the one described by the ELF header.  Takes
+// ownership of ehdr.
+void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) __attribute__ ((noreturn));
 
 #endif /* ELF_H */

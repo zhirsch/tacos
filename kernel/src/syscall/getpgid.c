@@ -7,6 +7,5 @@
 
 void syscall_getpgid(struct isr_frame* frame) {
   syscall_in0();
-  LOG("WHAT? %d\n", current_process->pgid);
   syscall_out(frame, current_process->pgid, "%ld");
 }

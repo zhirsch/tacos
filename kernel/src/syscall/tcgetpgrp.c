@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "bits/errno.h"
 
 #include "interrupts.h"
@@ -16,19 +18,20 @@ void syscall_tcgetpgrp(struct isr_frame* frame) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
-  if (!current_process->fds[fd].used) {
+  if (current_process->fds[fd].file == NULL) {
     syscall_out(frame, -EBADF, "%ld");
     return;
   }
-  if (current_process->fds[fd].tty == -1) {
-    syscall_out(frame, -ENOTTY, "%ld");
-    return;
-  }
-  if (current_process->fds[fd].tty != current_process->tty) {
-    syscall_out(frame, -ENOTTY, "%ld");
-    return;
-  }
-  if (ttys[current_process->tty].pgid == -1) {
+  // TODO
+  /* if (current_process->fds[fd].file->tty == -1) { */
+  /*   syscall_out(frame, -ENOTTY, "%ld"); */
+  /*   return; */
+  /* } */
+  /* if (current_process->fds[fd].file->tty != current_process->tty) { */
+  /*   syscall_out(frame, -ENOTTY, "%ld"); */
+  /*   return; */
+  /* } */
+  if (ttys[current_process->tty].pgid == PGID_NONE) {
     PANIC("EDGE CASE: no pgid for tty\n");
   }
 

@@ -3,11 +3,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void* memset(void* s, int c, size_t n) {
-  for (size_t i = 0; i < n; i++) {
-    *(((char*)s) + i) = (char)c;
-  }
-  return s;
+#include "kmalloc.h"
+
+void* memcpy(void* dest, const void* src, size_t n) {
+  return memmove(dest, src, n);
 }
 
 void* memmove(void* dest, const void* src, size_t n) {
@@ -25,16 +24,33 @@ void* memmove(void* dest, const void* src, size_t n) {
   return dest;
 }
 
-void* memcpy(void* dest, const void* src, size_t n) {
-  return memmove(dest, src, n);
+void* memset(void* s, int c, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    *(((char*)s) + i) = (char)c;
+  }
+  return s;
 }
 
-size_t strlen(const char* s) {
-  size_t c = 0;
-  while (*(s++) != '\0') {
-    c++;
+char* strcpy(char* dest, const char* src) {
+  char* t = dest;
+  while (*src != '\0') {
+    *(dest++) = *(src++);
   }
-  return c;
+  return t;
+}
+
+char* strdup(const char* s) {
+  char* t = kmalloc(strlen(s) + 1);
+  return strcpy(t, s);
+}
+
+int strncmp(const char* s1, const char* s2, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    if (s1[i] != s2[i]) {
+      return s1[i] - s2[i];
+    }
+  }
+  return 0;
 }
 
 char* strncpy(char* dest, const char* src, size_t n) {
@@ -65,4 +81,32 @@ char* strstr(const char* haystack, const char* needle) {
     return strstr(haystack+1, needle);
   }
   return (char*)haystack;
+}
+
+size_t strlen(const char* s) {
+  size_t c = 0;
+  while (*(s++) != '\0') {
+    c++;
+  }
+  return c;
+}
+
+char* strsep(char** stringp, const char* delim) {
+  char* const start = *stringp;
+  if (*stringp == NULL) {
+    return NULL;
+  }
+
+  for (char* p = *stringp; *p != '\0'; p++) {
+    for (const char* d = delim; *d != '\0'; d++) {
+      if (*p == *d) {
+        *p = '\0';
+        *stringp = p + 1;
+        return start;
+      }
+    }
+  }
+
+  *stringp = NULL;
+  return start;
 }

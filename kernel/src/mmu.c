@@ -194,6 +194,36 @@ void* mmu_unmap_page(void* vaddr) {
   return paddr;
 }
 
+void mmu_set_page_flags(void* vaddr, int flags) {
+  const uint32_t pte = PTE(vaddr);
+  if (!(pte & 0x1)) {
+    PANIC("mmu_set_page_flags(%08lx) is unmapped: %08lx\n", (uintptr_t)vaddr, pte);
+  }
+  PTE(vaddr) = (PTE(vaddr) & 0xfffff000) | flags;
+}
+
+void mmu_reset_cr3(void) {
+  for (int i = 0; i < 1024; i++) {
+    const uint32_t vaddr = i << 22;
+    if (vaddr == 0x00000000) {
+      for (int j = 0; j < 1024; j++) {
+        const uint32_t vaddr = (i << 22) | (j << 12);
+        if (vaddr == 0x000B8000) {
+          continue;
+        }
+        PTE(vaddr) = 0;
+        invlpg((void*)vaddr);
+      }
+      continue;
+    }
+    if (vaddr >= 0xC0000000) {
+      continue;
+    }
+    PDE(vaddr) = 0;
+    invlpg((void*)vaddr);
+  }
+}
+
 uintptr_t mmu_new_page_directory(void) {
   const uintptr_t new_pagedir_paddr = (uintptr_t)mmu_acquire_physical_page();
   mmu_map_page((void*)new_pagedir_paddr, (void*)0xB0000000, 0x1 | 0x2);
@@ -214,30 +244,10 @@ uintptr_t mmu_new_page_directory(void) {
   return new_pagedir_paddr;
 }
 
-void mmu_switch_page_directory(uintptr_t cr3) {
-  __asm__ __volatile__ ("mov %0, %%cr3" : : "a" (cr3) : "memory");
-  mmu_map_page((void*)0x000B8000, (void*)0x000B8000, 0x3);
-}
-
-void* mmu_new_stack(void* base_vaddr, int fence_pages, int pages) {
-  uintptr_t vaddr = (uintptr_t)base_vaddr;
-  // Unmap the leading fence.
-  for (int i = 0; i < fence_pages; i++) {
-    mmu_map_page(NULL, (void*)vaddr, 0x0);
-    vaddr += PAGESIZE;
-  }
-  // Map the actual stack to physical pages.
-  for (int i = 0; i < pages; i++) {
-    uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
-    mmu_map_page((void*)paddr, (void*)vaddr, 0x1 | 0x2 | 0x4);
-    vaddr += PAGESIZE;
-  }
-  // Unmap the trailing fence.
-  for (int i = 0; i < fence_pages; i++) {
-    mmu_map_page(NULL, (void*)vaddr, 0x0);
-    vaddr += PAGESIZE;
-  }
-  return (void*)((uintptr_t)base_vaddr + (fence_pages + pages) * PAGESIZE - 1);
+uintptr_t mmu_get_cr3(void) {
+  uintptr_t cr3;
+  __asm__ __volatile__ ("mov %%cr3, %0" : "=g" (cr3));
+  return cr3;
 }
 
 void* ksbrk(intptr_t increment) {

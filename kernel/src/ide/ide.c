@@ -8,6 +8,9 @@
 #include "portio.h"
 #include "string.h"
 
+#define LOG(...) log("ISO9660", __VA_ARGS__)
+#define PANIC(...) panic("ISO9660", __VA_ARGS__)
+
 #define NUM_CONTROLLERS 2
 #define NUM_DEVICES_PER_CONTROLLER 2
 
@@ -31,7 +34,9 @@
 #define ATA_COMMAND_PACKET                 0xA0
 #define ATA_COMMAND_IDENTIFY_PACKET_DEVICE 0xA1
 
-static int ide_read_internal(int controller, int position, void* buffer, int lba, int nwords);
+#if 0
+static int ide_read_internal(int controller, int position, void* buffer, int lba, size_t count);
+#endif
 
 // A device attached to an IDE controller.
 struct ide_device {
@@ -182,9 +187,7 @@ static void identify_ide_device(struct ide_device* device) {
 
   // Read the data.
   buffer = kmalloc(256 * sizeof(*buffer));
-  for (int i = 0; i < 256; i++) {
-    buffer[i] = inw(iobase + ATA_REGISTER_DATA);
-  }
+  insw(iobase + ATA_REGISTER_DATA, buffer, 256);
 
   // Set the device metadata.
   memcpy(device->model, buffer + 27, sizeof(device->model) - 1);
@@ -276,24 +279,26 @@ static int wait_for_bsy_to_drq(struct ide_controller* controller) {
   return 1;
 }
 
-int ide_read(int controller, int position, void* buffer, int lba, int nwords) {
-  int nwords_left = nwords;
-  for (int i = 0; i < nwords; i += 255 * 2048) {
-    const int c = (nwords_left > 255 * 2048) ? 255 * 2048 : nwords_left;
+int ide_read(int controller, int position, void* buffer, int lba, size_t count) {
+#if 0
+  size_t bytes_left = count;
+  for (size_t i = 0; i < count; i += 255 * 2048) {
+    const size_t c = (bytes_left > 255 * 2048) ? 255 * 2048 : bytes_left;
     if (!ide_read_internal(controller, position, (char*)buffer + i, lba + i / 2048, c)) {
       return 0;
     }
-    nwords_left -= c;
+    bytes_left -= c;
   }
   return 1;
 }
 
-static int ide_read_internal(int controller, int position, void* buffer, int lba, int nwords) {
+static int ide_read_internal(int controller, int position, void* buffer, int lba, size_t count) {
+#endif
   struct ide_device* device;
   int iobase;
   uint8_t packet[12];
 
-  log("IDE", "Reading %08x words starting at %d\n", nwords, lba);
+  log("IDE", "Reading %08lx bytes starting at %d\n", count, lba);
 
   // Make sure that the device to read from is valid.
   if (controller >= NUM_CONTROLLERS || position >= NUM_DEVICES_PER_CONTROLLER) {
@@ -315,12 +320,12 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   outb(iobase + ATA_REGISTER_FEATURES, 0x0);
 
   // Set the number of bytes to read.
-  outb(iobase + ATA_REGISTER_BYTE_LOW,  ((nwords * 2) >> 0) & 0xFF);
-  outb(iobase + ATA_REGISTER_BYTE_HIGH, ((nwords * 2) >> 8) & 0xFF);
+  outb(iobase + ATA_REGISTER_BYTE_LOW,  (count >> 0) & 0xFF);
+  outb(iobase + ATA_REGISTER_BYTE_HIGH, (count >> 8) & 0xFF);
 
   // Send the PACKET command to read bytes.
   // TODO(zhirsch): Align to sector boundaries? At least set the number of
-  // sectors to read appropriately based on nwords.
+  // sectors to read appropriately based on count.
   packet[0x0] = 0xA8;
   packet[0x1] = 0x0;
   packet[0x2] = (lba >> 24) & 0xFF;
@@ -330,8 +335,8 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   packet[0x6] = 0x0;
   packet[0x7] = 0x0;
   packet[0x8] = 0x0;
-  packet[0x9] = nwords / 2048;
-  if ((nwords % 2048) > 0) {
+  packet[0x9] = count / 2048;
+  if (count % 2048 > 0) {
     packet[0x9]++;
   }
   packet[0xa] = 0x0;
@@ -356,9 +361,7 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   }
 
   // Read the data.
-  for (int i = 0; i < nwords; i++) {
-    ((uint16_t*)buffer)[i] = inw(iobase + ATA_REGISTER_DATA);
-  }
+  insw(iobase + ATA_REGISTER_DATA, (uint16_t*)buffer, count / 2);
 
   // Wait for DRDY.  This ensures that the device is back in a known state.
   wait_for_irq(device->controller);

@@ -20,20 +20,17 @@ env = env.Clone(
         '-std=c99',
         '-pedantic',
         '-gstabs+',
-        '-flto',
         '-g3',
         '-O0' if env['T'] == 'debug' else '-O2',
     ],
     ASFLAGS = [
         '-gstabs+',
         '-g3',
-        '-flto',
         '-O0' if env['T'] == 'debug' else '-O2',
     ],
     LINKFLAGS = [
         '-ffreestanding',
         '-nostdlib',
-        '-flto',
         '-Wl,--fatal-warnings',
         '-Wl,--gc-sections',
         '-Wl,--print-gc-sections',
@@ -57,6 +54,7 @@ objects += env.SConscript(
     ],
 )
 objects += env.Object([
+    'elf.c',
     'fpu.c',
     'interrupts.c',
     'iso9660.c',
