@@ -119,7 +119,7 @@ static void start_init(const char* cmdline) {
   if (c < 0) {
     PANIC("Failed to read %s: %d\n", initpath, c);
   }
-  if ((size_t)c != st.st_size) {
+  if (c != st.st_size) {
     PANIC("Unable to read all of %s: %d of %ld\n", initpath, c, (unsigned long)st.st_size);
   }
 

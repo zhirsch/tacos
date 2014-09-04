@@ -17,7 +17,13 @@
 #define SIGTTIN 21
 #define SIGTTOU 22
 
-#define NUM_SIGNALS 32
+#define NSIG 32
+
+#define SIG_SETMASK 0
+#define SIG_BLOCK   1
+
+typedef void (*_sig_func_ptr) (int);
+typedef _sig_func_ptr __sighandler_t;
 
 typedef uint32_t sigset_t;
 

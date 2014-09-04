@@ -1,22 +1,33 @@
 #ifndef BITS_TYPES_H
 #define BITS_TYPES_H
 
-#include <stdint.h>
+#include <stddef.h>
 
-typedef uint32_t pid_t;
-typedef uint16_t uid_t;
-typedef uint16_t gid_t;
+typedef long int             blkcnt_t;
+typedef long int             blksize_t;
+typedef long int             clock_t;
+typedef int                  clockid_t;
+typedef unsigned long long   dev_t;
+typedef unsigned long int    fsblkcnt_t;
+typedef unsigned long int    fsfilcnt_t;
+typedef unsigned int         gid_t;
+typedef unsigned int         id_t;
+typedef unsigned long int    ino_t;
+typedef int                  key_t;
+typedef unsigned int         mode_t;
+typedef unsigned long int    nlink_t;
+typedef long int             off_t;
+typedef int                  pid_t;
+typedef long int             suseconds_t;
+typedef long int             time_t;
+typedef void*                timer_t;
+typedef unsigned int         uid_t;
+typedef unsigned int         useconds_t;
 
-typedef uint16_t dev_t;
-typedef uint32_t ino_t;
-typedef uint16_t nlink_t;
-typedef uint64_t off_t;
+typedef int                  ssize_t;
 
-typedef uint32_t mode_t;
-
-typedef uint32_t blksize_t;
-typedef uint32_t blkcnt_t;
-
-typedef uint32_t time_t;
+/* These are defined in stddef.h:
+typedef size_t;
+*/
 
 #endif /* BITS_TYPES_H */

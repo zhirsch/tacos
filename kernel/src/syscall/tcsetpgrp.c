@@ -12,7 +12,7 @@
 #define LOG(...) log("SYSCALL [TCSETPGRP]", __VA_ARGS__)
 
 void syscall_tcsetpgrp(struct isr_frame* frame) {
-  syscall_in2(frame, int, fd, "%d", pid_t, pgrp, "%ld");
+  syscall_in2(frame, int, fd, "%d", pid_t, pgrp, "%d");
 
   if (fd < 0 || fd > NUM_FDS) {
     syscall_out(frame, -EBADF, "%ld");

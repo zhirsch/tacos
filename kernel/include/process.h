@@ -35,7 +35,7 @@ struct process {
   } fds[NUM_FDS];
 
   // The signal actions.
-  struct sigaction sigactions[NUM_SIGNALS];
+  struct sigaction sigactions[NSIG];
 
   int argc;
   char** argv;

@@ -19,7 +19,7 @@ void syscall_sigaction(struct isr_frame* frame) {
   act = (const struct sigaction*)void_act;
   oldact = (struct sigaction*)void_oldact;
 
-  if (signum <= 0 || signum >= NUM_SIGNALS) {
+  if (signum <= 0 || signum >= NSIG) {
     syscall_out(frame, -EINVAL, "%ld");
     return;
   }

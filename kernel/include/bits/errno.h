@@ -36,4 +36,8 @@
 #define	EDOM		33	/* Math argument out of domain of func */
 #define	ERANGE		34	/* Math result not representable */
 
+#define	EILSEQ		84      /* Illegal byte sequence */
+
+#define	EWOULDBLOCK	EAGAIN  /* Operation would block */
+
 #endif  /* BITS_ERRNO_H */
