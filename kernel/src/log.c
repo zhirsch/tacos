@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "portio.h"
+#include "screen.h"
 #include "snprintf.h"
 #include "string.h"
 
@@ -49,6 +50,7 @@ void panic(const char* w, const char* format, ...) {
   outputv(format, ap);
   va_end(ap);
   print_call_stack(0, (uint32_t)__builtin_frame_address(0));
+  screen_panic();
   __asm__ __volatile__ ("cli; hlt");
   while (1) { }
 }

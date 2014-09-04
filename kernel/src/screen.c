@@ -31,6 +31,15 @@ void screen_clear(void) {
   cursor.y = 0;
 }
 
+void screen_panic(void) {
+  for (int i = 0; i < MAXLINES; i++) {
+    for (int j = 0; j < MAXCOLS; j++) {
+      unsigned short* p = VGAMEMBASE + i * MAXCOLS + j;
+      *p = (0x4f << 8) | (*p & 0xff);
+    }
+  }
+}
+
 void screen_writech(char ch) {
   if (ch >= ' ') {
     *(VGAMEMBASE + (cursor.y * MAXCOLS + cursor.x)) = ch | (attrib << 8);
