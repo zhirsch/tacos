@@ -38,7 +38,7 @@ env = env.Clone(
         '-T$LDSCRIPT',
     ],
     CPPPATH = [
-        '#kernel/include',
+        '#bld/$T/kernel/include',
     ],
 )
 

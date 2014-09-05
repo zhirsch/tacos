@@ -1,0 +1,148 @@
+---
+- name: close
+  type: int
+  args:
+    - name: fd
+      type: int
+
+- name: _exit
+  args:
+    - name: status
+      type: int
+
+- name: fcntl
+  type: int
+  args:
+    - name: fd
+      type: int
+    - name: cmd
+      type: int
+    - name: arg
+      type: uint32_t
+
+- name: getcwd
+  type: char*
+  args:
+    - name: buf
+      type: char*
+    - name: size
+      type: size_t
+
+- name: getegid
+  type: gid_t
+
+- name: geteuid
+  type: uid_t
+
+- name: getgid
+  type: gid_t
+
+- name: getpgid
+  type: pid_t
+
+- name: getpid
+  type: pid_t
+
+- name: getppid
+  type: pid_t
+
+- name: getuid
+  type: uid_t
+
+- name: isatty
+  type: int
+  args:
+    - name: fd
+      type: int
+
+- name: open
+  type: int
+  args:
+    - name: pathname
+      type: const char*
+    - name: flags
+      type: int
+    - name: mode
+      type: mode_t
+
+- name: read
+  type: ssize_t
+  args:
+    - name: fd
+      type: int
+    - name: buf
+      type: void*
+    - name: count
+      type: size_t
+
+- name: sbrk
+  type: void*
+  args:
+    - name: increment
+      type: intptr_t
+
+- name: setpgid
+  type: int
+  args:
+    - name: pid
+      type: pid_t
+    - name: pgid
+      type: pid_t
+
+- name: sigaction
+  type: int
+  args:
+    - name: signum
+      type: int
+    - name: act
+      type: const struct sigaction*
+    - name: oldact
+      type: struct sigaction*
+
+- name: sigfillset
+  type: int
+  args:
+    - name: set
+      type: sigset_t*
+
+- name: stat
+  type: int
+  args:
+    - name: path
+      type: const char*
+    - name: buf
+      type: struct stat*
+
+- name: tcgetpgrp
+  type: pid_t
+  args:
+    - name: fd
+      type: int
+
+- name: tcsetpgrp
+  type: int
+  args:
+    - name: fd
+      type: int
+    - name: pgrp
+      type: pid_t
+
+- name: waitpid
+  type: pid_t
+  args:
+    - name: pid
+      type: pid_t
+    - name: status
+      type: int*
+    - name: options
+      type: int
+
+- name: write
+  type: ssize_t
+  args:
+    - name: fd
+      type: int
+    - name: buf
+      type: const void*
+    - name: count
+      type: size_t

@@ -1,42 +1,31 @@
+#include "syscalls/syscalls.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include "bits/errno.h"
 #include "bits/fcntl.h"
 
-#include "interrupts.h"
-#include "log.h"
 #include "process.h"
-#include "string.h"
-#include "syscall.h"
-
-#define LOG(...) log("SYSCALL [FCNTL]", __VA_ARGS__)
 
 static int dupfd(int oldfd, int newfd);
 static int setfd(int fd, int val);
 
-void syscall_fcntl(struct isr_frame* frame) {
-  syscall_in3(frame, int, fd, "%d", int, cmd, "%d", uint32_t, arg, "%08lx");
-
+int sys_fcntl(int fd, int cmd, uint32_t arg) {
   if (fd < 0 || fd > NUM_FDS) {
-    syscall_out(frame, -EBADF, "%ld");
-    return;
+    return -EBADF;
   }
   if (current_process->fds[fd].file == NULL) {
-    syscall_out(frame, -EBADF, "%ld");
-    return;
+    return -EBADF;
   }
 
   switch (cmd) {
   case F_DUPFD:
-    syscall_out(frame, dupfd(fd, arg), "%ld");
-    return;
+    return dupfd(fd, arg);
   case F_SETFD:
-    syscall_out(frame, setfd(fd, arg), "%ld");
-    return;
+    return setfd(fd, arg);
   default:
-    syscall_out(frame, -ERANGE, "%ld");
-    return;
+    return -ERANGE;
   }
 }
 

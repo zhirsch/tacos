@@ -1,23 +1,15 @@
-#include <stddef.h>
+#include "syscalls/syscalls.h"
+
 #include <stdint.h>
 
 #include "bits/errno.h"
 
-#include "interrupts.h"
-#include "log.h"
 #include "process.h"
 #include "string.h"
-#include "syscall.h"
 
-#define LOG(...) log("SYSCALL [GETCWD]", __VA_ARGS__)
-
-void syscall_getcwd(struct isr_frame* frame) {
-  syscall_in2(frame, char*, buf, "%8p", size_t, size, "%ld");
-
+char* sys_getcwd(char* buf, size_t size) {
   if (size < strlen(current_process->cwd) + 1) {
-    syscall_out(frame, -ERANGE, "%ld");
-    return;
+    return (char*)-ERANGE;
   }
-  strncpy(buf, current_process->cwd, size);
-  syscall_out(frame, buf, "%08lx");
+  return strncpy(buf, current_process->cwd, size);
 }

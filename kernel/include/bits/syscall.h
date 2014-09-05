@@ -43,4 +43,6 @@
 #define __SYSCALL_waitpid     40
 #define __SYSCALL_write       41
 
+#define NSYSCALLS 42
+
 #endif /* SYSCALL_SYSCALLS_H */

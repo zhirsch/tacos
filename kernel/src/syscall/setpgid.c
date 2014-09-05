@@ -1,16 +1,13 @@
+#include "syscalls/syscalls.h"
+
 #include "bits/types.h"
 
-#include "interrupts.h"
 #include "log.h"
 #include "process.h"
-#include "syscall.h"
 
-#define LOG(...) log("SYSCALL [SETPGID]", __VA_ARGS__)
 #define PANIC(...) panic("SYSCALL [SETPGID]", __VA_ARGS__)
 
-void syscall_setpgid(struct isr_frame* frame) {
-  syscall_in2(frame, pid_t, pid, "%d", pid_t, pgid, "%d");
-
+int sys_setpgid(pid_t pid, pid_t pgid) {
   if (pid == 0) {
     pid = current_process->pid;
   }
@@ -26,5 +23,5 @@ void syscall_setpgid(struct isr_frame* frame) {
   }
 
   current_process->pgid = pgid;
-  syscall_out(frame, 0, "%ld");
+  return 0;
 }

@@ -1,37 +1,31 @@
+#include "syscalls/syscalls.h"
+
 #include <stddef.h>
 
 #include "bits/errno.h"
 #include "bits/types.h"
 
-#include "interrupts.h"
-#include "log.h"
 #include "process.h"
-#include "syscall.h"
 #include "tty.h"
 
-#define LOG(...) log("SYSCALL [TCSETPGRP]", __VA_ARGS__)
-
-void syscall_tcsetpgrp(struct isr_frame* frame) {
-  syscall_in2(frame, int, fd, "%d", pid_t, pgrp, "%d");
-
+int sys_tcsetpgrp(int fd, pid_t pgrp) {
   if (fd < 0 || fd > NUM_FDS) {
-    syscall_out(frame, -EBADF, "%ld");
-    return;
+    return -EBADF;
   }
   if (current_process->fds[fd].file == NULL) {
-    syscall_out(frame, -EBADF, "%ld");
-    return;
+    return -EBADF;
   }
+
   // TODO
-  /* if (current_process->fds[fd].file->tty == -1) { */
-  /*   syscall_out(frame, -ENOTTY, "%ld"); */
-  /*   return; */
-  /* } */
-  /* if (current_process->fds[fd].file->tty != current_process->tty) { */
-  /*   syscall_out(frame, -ENOTTY, "%ld"); */
-  /*   return; */
-  /* } */
+#if 0
+  if (current_process->fds[fd].file->tty == -1) {
+    return -ENOTYY;
+  }
+  if (current_process->fds[fd].file->tty != current_process->tty) {
+    return -ENOTYY;
+  }
+#endif
 
   ttys[current_process->tty].pgid = pgrp;
-  syscall_out(frame, 0, "%ld");
+  return 0;
 }

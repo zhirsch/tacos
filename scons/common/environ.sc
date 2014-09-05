@@ -1,3 +1,4 @@
+# -*- mode: python -*-
 # Common definitions for all SConstruct files
 import SCons
 
