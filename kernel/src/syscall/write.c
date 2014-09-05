@@ -4,15 +4,31 @@
 #include <stdint.h>
 
 #include "bits/errno.h"
+#include "bits/fcntl.h"
 
+#include "log.h"
+#include "process.h"
 #include "screen.h"
+#include "tty.h"
+
+#define PANIC(...) panic("SYSCALL [WRITE]", __VA_ARGS__)
 
 ssize_t sys_write(int fd, const void* buf, size_t count) {
   if (buf == NULL) {
     return -EFAULT;
   }
-  for (size_t i = 0; i < count; i++) {
-    screen_writech(((char*)buf)[i]);
+  if (current_process->fds[fd].type == PROCESS_FD_CLOSED) {
+    return -EBADF;
   }
-  return count;
+  if (!(current_process->fds[fd].mode & O_WRONLY) &&
+      !(current_process->fds[fd].mode & O_RDWR)) {
+    return -EBADF;
+  }
+  if (current_process->fds[fd].type == PROCESS_FD_FILE) {
+    PANIC("PROCESS_FD_FILE NOT IMPLEMENTED\n");
+  }
+  if (current_process->fds[fd].type == PROCESS_FD_TTY) {
+    return tty_write(current_process->fds[fd].u.tty, buf, count);
+  }
+  return -EBADF;
 }

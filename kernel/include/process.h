@@ -9,6 +9,9 @@
 #include "mmu.h"
 #include "tss.h"
 
+#define FD_STDIN  0
+#define FD_STDOUT 1
+#define FD_STDERR 2
 #define NUM_FDS 16
 
 #define PGID_NONE 0
@@ -26,11 +29,19 @@ struct process {
   gid_t egid;
 
   // The controlling tty for the process.
-  int tty;
+  struct tty* tty;
 
   // The file descriptor table.
   struct {
-    struct file* file;
+    enum {
+      PROCESS_FD_CLOSED,
+      PROCESS_FD_FILE,
+      PROCESS_FD_TTY,
+    } type;
+    union {
+      struct file* file;
+      struct tty*  tty;
+    } u;
     mode_t mode;
   } fds[NUM_FDS];
 

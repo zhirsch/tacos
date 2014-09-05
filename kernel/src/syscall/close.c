@@ -8,7 +8,7 @@ int sys_close(int fd) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }
-  if (current_process->fds[fd].file == NULL) {
+  if (current_process->fds[fd].type == PROCESS_FD_CLOSED) {
     return -EBADF;
   }
 

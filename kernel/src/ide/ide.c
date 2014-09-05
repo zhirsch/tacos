@@ -34,10 +34,6 @@
 #define ATA_COMMAND_PACKET                 0xA0
 #define ATA_COMMAND_IDENTIFY_PACKET_DEVICE 0xA1
 
-#if 0
-static int ide_read_internal(int controller, int position, void* buffer, int lba, size_t count);
-#endif
-
 // A device attached to an IDE controller.
 struct ide_device {
   // The controller, and position on that controller, of this device.
@@ -227,7 +223,7 @@ void init_ide(void) {
       identify_ide_device(device);
 
       // If the device isn't present, or it's not ATAPI, skip it.
-      // TODO(zhirsch): Support ATAPI.
+      // TODO(zhirsch): Support !ATAPI.
       if (!device->present || !device->atapi) {
         continue;
       }

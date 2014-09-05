@@ -12,7 +12,7 @@ int sys_tcsetpgrp(int fd, pid_t pgrp) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }
-  if (current_process->fds[fd].file == NULL) {
+  if (current_process->fds[fd].type != PROCESS_FD_TTY) {
     return -EBADF;
   }
 
@@ -26,6 +26,6 @@ int sys_tcsetpgrp(int fd, pid_t pgrp) {
   }
 #endif
 
-  ttys[current_process->tty].pgid = pgrp;
+  current_process->tty->pgid = pgrp;
   return 0;
 }

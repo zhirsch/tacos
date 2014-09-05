@@ -28,17 +28,14 @@
 #define PANIC(...) panic("KMAIN", __VA_ARGS__)
 
 static void init_tss(void);
+static void announce(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
+
+static char cmdline[256];
 
 // kmain is the main entry point to the kernel after boot.S executes.
 void kmain(int magic, multiboot_info_t* mbi) {
-  char cmdline[256];
-
   init_ssp();
-
-  // Initialize the consoles.
-  init_tty();
-  screen_clear();
 
   // Copy the command line into a buffer with a valid virtual address.  The boot
   // loader stores a physical address in mbi->cmdline, which won't be accessible
@@ -46,15 +43,19 @@ void kmain(int magic, multiboot_info_t* mbi) {
   strncpy(cmdline, (const char*)mbi->cmdline, sizeof(cmdline) - 1);
   cmdline[sizeof(cmdline)-1] = '\0';
 
-  // Announce the OS.
-  screen_writef("TacOS! (%s)\n", cmdline);
-
   // Initialize the address space.
   init_mmu(mbi);
   init_tss();
 
   // Initialize the FPU.
   init_fpu();
+
+  // Initialize the consoles.
+  init_tty();
+  screen_clear();
+
+  // Announce the OS.
+  announce();
 
   // Initialize interrupts.
   init_interrupts();
@@ -67,6 +68,14 @@ void kmain(int magic, multiboot_info_t* mbi) {
 
   // Start the init program.  This doesn't return.
   start_init(cmdline);
+}
+
+static void announce(void) {
+  for (int i = 0; i < NUM_TTYS; i++) {
+    char ann[300];
+    const size_t sz = snprintf(ann, sizeof(ann), "TacOS! (TTY %d)\n", i);
+    tty_write(tty_get(i), ann, sz);
+  }
 }
 
 static const char* get_init_path(const char* cmdline) {
@@ -140,7 +149,7 @@ static void start_init(const char* cmdline) {
   current_process->euid    = 0;  // root
   current_process->gid     = 0;  // root
   current_process->egid    = 0;  // root
-  current_process->tty     = TTY_NONE;
+  current_process->tty     = tty_get(0);
   current_process->cwd     = "/";
   current_process->tss.cs  = SEGMENT_USER_CODE;
   current_process->tss.ss  = SEGMENT_USER_DATA;
@@ -150,6 +159,21 @@ static void start_init(const char* cmdline) {
   current_process->tss.gs  = SEGMENT_USER_DATA;
   current_process->tss.cr3 = mmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
+
+  // stdin
+  current_process->fds[FD_STDIN].type = PROCESS_FD_TTY;
+  current_process->fds[FD_STDIN].u.tty = tty_get(0);
+  current_process->fds[FD_STDIN].mode = O_RDONLY;
+  // stdout
+  current_process->fds[FD_STDOUT].type = PROCESS_FD_TTY;
+  current_process->fds[FD_STDOUT].u.tty = tty_get(0);
+  current_process->fds[FD_STDOUT].mode = O_WRONLY;
+  // stderr
+  current_process->fds[FD_STDERR].type = PROCESS_FD_TTY;
+  current_process->fds[FD_STDERR].u.tty = tty_get(0);
+  current_process->fds[FD_STDERR].mode = O_WRONLY;
+
+  tty_setpgid(current_process->tty, current_process->pgid);
 
   // Execute the init program.
   {
