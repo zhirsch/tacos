@@ -181,9 +181,11 @@ static void identify_ide_device(struct ide_device* device) {
 
   device->present = 1;
 
-  // Read the data.
+  // Read the data.  Use inw in a loop because insw is too fast for QEMU.
   buffer = kmalloc(256 * sizeof(*buffer));
-  insw(iobase + ATA_REGISTER_DATA, buffer, 256);
+  for (int i = 0; i < 256; i++) {
+    buffer[i] = inw(iobase + ATA_REGISTER_DATA);
+  }
 
   // Set the device metadata.
   memcpy(device->model, buffer + 27, sizeof(device->model) - 1);
