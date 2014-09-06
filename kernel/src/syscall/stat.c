@@ -1,14 +1,25 @@
 #include "syscalls/syscalls.h"
 
 #include "bits/errno.h"
+#include "bits/fcntl.h"
 #include "bits/stat.h"
 
+#include "file.h"
+#include "iso9660.h"
+
 int sys_stat(const char* path, struct stat* buf) {
+  struct file file;
+  int err;
   if (buf == NULL) {
     return -EFAULT;
   }
-
-  // TODO
-  buf->st_mode = S_IFREG | S_IRUSR | S_IWUSR | S_IXUSR;
-  return 0;
+  err = iso9660_open(path, O_RDONLY, &file);
+  if (err != 0) {
+    return err;
+  }
+  err = iso9660_fstat(&file, buf);
+  if (err != 0) {
+    return err;
+  }
+  return iso9660_close(&file);
 }

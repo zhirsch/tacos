@@ -8,11 +8,18 @@ int sys_close(int fd) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }
-  if (current_process->fds[fd].type == PROCESS_FD_CLOSED) {
+  switch (current_process->fds[fd].type) {
+  case PROCESS_FD_CLOSED:
     return -EBADF;
+  case PROCESS_FD_TTY:
+    current_process->fds[fd].u.tty = NULL;
+    break;
+  case PROCESS_FD_FILE:
+    // TODO: keep a reference count and close the underlying file when it
+    // reaches zero.
+    current_process->fds[fd].u.file = NULL;
+    break;
   }
-
-  // TODO
-  /* current_process->fds[fd].used = 0; */
+  current_process->fds[fd].type = PROCESS_FD_CLOSED;
   return 0;
 }

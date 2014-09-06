@@ -41,7 +41,20 @@ char* strcpy(char* dest, const char* src) {
 
 char* strdup(const char* s) {
   char* t = kmalloc(strlen(s) + 1);
-  return strcpy(t, s);
+  strcpy(t, s);
+  t[strlen(s)] = '\0';
+  return t;
+}
+
+int strcmp(const char* s1, const char* s2) {
+  while (*s1 != '\0' && *s2 != '\0') {
+    if (*s1 != *s2) {
+      return *s1 - *s2;
+    }
+    s1++;
+    s2++;
+  }
+  return *s1 - *s2;
 }
 
 int strncmp(const char* s1, const char* s2, size_t n) {

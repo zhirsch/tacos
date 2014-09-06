@@ -15,17 +15,14 @@ int sys_tcsetpgrp(int fd, pid_t pgrp) {
   if (current_process->fds[fd].type != PROCESS_FD_TTY) {
     return -EBADF;
   }
-
-  // TODO
-#if 0
-  if (current_process->fds[fd].file->tty == -1) {
-    return -ENOTYY;
+  if (current_process->tty == NULL) {
+    return -ENOTTY;
   }
-  if (current_process->fds[fd].file->tty != current_process->tty) {
-    return -ENOTYY;
+  if (current_process->fds[fd].u.tty != current_process->tty) {
+    return -ENOTTY;
   }
-#endif
-
+  // TODO: current_process->fds[fd].u.tty->pgid is not in the same session as current_process->pgrp -> ENOTTY
+  // TODO: pgrp is not in the same session as current_process->pgrp -> EPERM
   current_process->tty->pgid = pgrp;
   return 0;
 }

@@ -115,9 +115,9 @@ struct primary_volume_descriptor {
   char reserved[653];
 } __attribute__ ((packed));
 
-struct primary_volume_descriptor* get_primary_volume_descriptor(void);
-off_t get_directory_entry_offset(char* path, struct directory_entry* entry);
-struct directory_entry* get_directory_entry(off_t entry_offset);
+static struct primary_volume_descriptor* get_primary_volume_descriptor(void);
+static off_t get_directory_entry_offset(char* path, struct directory_entry* entry);
+static struct directory_entry* get_directory_entry(off_t entry_offset);
 
 int iso9660_open(const char* path, int flags, struct file* file) {
   struct primary_volume_descriptor* pvd = NULL;
@@ -143,6 +143,7 @@ int iso9660_open(const char* path, int flags, struct file* file) {
   file->inode = get_directory_entry_offset(p + 1, &pvd->root);
   kfree(p);
   if (file->inode == 0) {
+    LOG("Unable to find directory entry for %s\n", path);
     kfree(pvd);
     return -ENOENT;
   }
@@ -209,7 +210,7 @@ int iso9660_close(struct file* file) {
   return 0;
 }
 
-struct primary_volume_descriptor* get_primary_volume_descriptor(void) {
+static struct primary_volume_descriptor* get_primary_volume_descriptor(void) {
   int lba = 0x10;
   struct primary_volume_descriptor* pvd = NULL;
 
@@ -238,7 +239,46 @@ struct primary_volume_descriptor* get_primary_volume_descriptor(void) {
   return NULL;
 }
 
-off_t get_directory_entry_offset(char* path, struct directory_entry* entry) {
+static char* decode_directory_entry_path(struct directory_entry* d) {
+  const char* dpath = (const char*)d + sizeof(*d);
+  char* p = NULL;
+  const int align = ((d->path_len % 2) == 0);
+  int i;
+
+  // Handle special cases for the . and .. entries.
+  if (d->path_len == 1 && *dpath == 0x00) {
+    return strdup(".");
+  } else if (d->path_len == 1 && *dpath == 0x01) {
+    return strdup("..");
+  }
+
+  // Parse the rock ridge extensions.
+  // TODO: Read the SP entry in the . entry of the root directory table to
+  // determine the offset from the start of the system use area.  For now,
+  // assume that it's zero.
+#define RR_SU_OFFSET 0
+  i = sizeof(*d) + d->path_len + align + RR_SU_OFFSET;
+  while (i < d->len) {
+    const uint8_t* su = (uint8_t*)d + i;
+    const uint16_t sig = (su[0] << 8) | (su[1] << 0);
+    const uint8_t  len = su[2];
+    if (sig != 0x4e4d) { // NM
+      i += len;
+      continue;
+    }
+    p = kmalloc(len - 5 + 1);
+    memcpy(p, su + 5, len - 5);
+    p[len - 5] = '\0';
+    return p;
+  }
+
+  p = kmalloc(d->path_len + 1);
+  memcpy(p, dpath, d->path_len);
+  p[d->path_len] = '\0';
+  return p;
+}
+
+static off_t get_directory_entry_offset(char* path, struct directory_entry* entry) {
   const char* p = NULL;
   uint8_t* buffer = NULL;
   uint32_t i;
@@ -265,34 +305,32 @@ off_t get_directory_entry_offset(char* path, struct directory_entry* entry) {
   while (i < entry->size_lsb) {
     off_t pos;
     struct directory_entry* d = (struct directory_entry*)(buffer + i);
-    const char* dpath = (char*)(buffer + i + sizeof(*d));
-    if (d->path_len == 1 && (*dpath == 0x00 || *dpath == 0x01)) {
-      i += d->len;
-      continue;
+    char* dpath = NULL;
+    if (d->len == 0) {
+      break;
     }
-    if (strlen(p) != d->path_len) {
+    dpath = decode_directory_entry_path(d);
+    if (strcmp(p, dpath) != 0) {
       i += d->len;
-      continue;
-    }
-    if (strncmp(p, dpath, d->path_len) != 0) {
-      i += d->len;
+      kfree(dpath);
       continue;
     }
     if (path == NULL) {
+      kfree(dpath);
       kfree(buffer);
       return entry->lba_lsb * SECTOR_SIZE + i;
     }
     pos = get_directory_entry_offset(path, d);
+    kfree(dpath);
     kfree(buffer);
     return pos;
   }
 
-  LOG("Unable to find directory entry for path %s/%s\n", p, path);
   kfree(buffer);
   return 0;
 }
 
-struct directory_entry* get_directory_entry(off_t entry_offset) {
+static struct directory_entry* get_directory_entry(off_t entry_offset) {
   int lba;
   uint8_t* buffer = NULL;
   size_t len;
@@ -322,104 +360,3 @@ struct directory_entry* get_directory_entry(off_t entry_offset) {
   kfree(buffer);
   return entry;
 }
-
-#if 0
-void* iso9660_load_file_from_atapi(int controller, int position, const char* path) {
-  uint32_t extent_pos, extent_len;
-  uint8_t* buffer;
-
-  if (path[0] != '/') {
-    LOG("Load path %s does not start with a slash\n", path);
-    return NULL;
-  }
-
-  // Find the primary volume descriptor.
-  buffer = kmalloc(BUFFER_SIZE);
-  while (1) {
-    int lba = 0x10;
-    if (!ide_read(controller, position, buffer, lba, BUFFER_SIZE / 2)) {
-      LOG("Read from %d-%d at LBA %x of %x bytes failed\n", controller, position, lba, BUFFER_SIZE);
-      kfree(buffer);
-      return NULL;
-    }
-    if (buffer[0] == 0x1) {
-      path += strlen("/");
-      memcpy(&extent_pos, buffer + 156 +  2, 4);
-      memcpy(&extent_len, buffer + 156 + 10, 4);
-      break;
-    } else if (buffer[0] == 0xff) {
-      LOG("No primary volume descriptor found on %d-%d\n", controller, position);
-      kfree(buffer);
-      return NULL;
-    }
-  }
-
-  while (1) {
-    int i = 0;
-
-    if (!ide_read(controller, position, buffer, extent_pos, extent_len / 2)) {
-      LOG("Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
-      kfree(buffer);
-      return NULL;
-    }
-
-    // Skip the first two records (. and ..).
-    i += buffer[i];
-    i += buffer[i];
-
-    // Look for the entry that matches the path.
-    while (buffer[i] != 0) {
-      const uint8_t* p = buffer + i;
-      const char* name = (const char*)(p + 33);
-      const uint8_t namelen = p[32];
-      i += p[0];
-      if (strlen(path) < namelen) {
-        continue;
-      }
-      {
-        int i;
-        for (i = 0; i < namelen; i++) {
-          if (path[i] == '/' || path[i] == '\0') {
-            break;
-          }
-          if (path[i] != name[i]) {
-            break;
-          }
-        }
-        if (i != namelen) {
-          continue;
-        }
-      }
-      if (path[namelen] == '\0' && !(p[25] & 0x2)) {
-        void* ptr;
-        memcpy(&extent_pos, p +  2, 4);
-        memcpy(&extent_len, p + 10, 4);
-        ptr = kmemalign(PAGESIZE, extent_len);
-        if (ptr == NULL) {
-          PANIC("Unable to allocate memory to load file.\n");
-        }
-        LOG("Need to read %08lx words from %d-%d at LBA %lx\n", extent_len / 2, controller, position, extent_pos);
-        if (!ide_read(controller, position, ptr, extent_pos, extent_len / 2)) {
-          LOG("Read from %d-%d at LBA %lx of %lx bytes failed\n", controller, position, extent_pos, extent_len);
-          kfree(ptr);
-          kfree(buffer);
-          return NULL;
-        }
-        kfree(buffer);
-        return ptr;
-      }
-      if (path[namelen] == '/') {
-        path += namelen + 1;
-        memcpy(&extent_pos, p +  2, 4);
-        memcpy(&extent_len, p + 10, 4);
-        break;
-      }
-    }
-    if (buffer[i] == 0) {
-      LOG("SAD FACE!\n");
-      kfree(buffer);
-      return NULL;
-    }
-  }
-}
-#endif

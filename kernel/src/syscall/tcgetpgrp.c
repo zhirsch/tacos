@@ -4,11 +4,8 @@
 
 #include "bits/errno.h"
 
-#include "log.h"
 #include "process.h"
 #include "tty.h"
-
-#define PANIC(...) panic("SYSCALL [TCGETPGRP]", __VA_ARGS__)
 
 pid_t sys_tcgetpgrp(int fd) {
   if (fd < 0 || fd > NUM_FDS) {
@@ -17,19 +14,14 @@ pid_t sys_tcgetpgrp(int fd) {
   if (current_process->fds[fd].type != PROCESS_FD_TTY) {
     return -EBADF;
   }
-
-  // TODO
-#if 0
-  if (current_process->fds[fd].u.tty == -1) {
+  if (current_process->tty == NULL) {
     return -ENOTTY;
   }
   if (current_process->fds[fd].u.tty != current_process->tty) {
     return -ENOTTY;
   }
-#endif
   if (current_process->tty->pgid == PGID_NONE) {
-    PANIC("EDGE CASE: no pgid for tty\n");
+    return process_next_pgid();
   }
-
   return current_process->tty->pgid;
 }

@@ -348,6 +348,7 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   }
 
   // Write the command packet.
+  __asm__ __volatile__ ("sti");
   for (unsigned int i = 0; i < sizeof(packet) / 2; i++) {
     outw(iobase + ATA_REGISTER_DATA, ((uint16_t*)packet)[i]);
   }
@@ -355,6 +356,7 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   // Wait for DRQ.
   wait_for_irq(device->controller);
   if (!wait_for_bsy_to_drq(device->controller)) {
+    __asm__ __volatile__ ("cli");
     return 0;
   }
 
@@ -364,6 +366,7 @@ static int ide_read_internal(int controller, int position, void* buffer, int lba
   // Wait for DRDY.  This ensures that the device is back in a known state.
   wait_for_irq(device->controller);
   wait_until(device->controller, ATA_STATUS_DRDY);
+  __asm__ __volatile__ ("cli");
 
   return 1;
 }

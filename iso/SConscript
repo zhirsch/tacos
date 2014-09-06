@@ -23,7 +23,10 @@ env.Depends(iso, CopyFile(env.File('root/boot/grub/stage2_eltorito'), env.File('
 env.Depends(iso, CopyFile(env.File('root/boot/tacos'), kernel))
 env.Depends(iso, CopyFile(env.File('root/dash'), env.File('#toolchain/install/bin/dash')))
 for binary in user:
-    env.Depends(iso, CopyFile(env.File('root/%s' % binary.name), binary))
+    if binary.name == 'env':
+        env.Depends(iso, CopyFile(env.File('root/usr/bin/%s' % binary.name), binary))
+    else:
+        env.Depends(iso, CopyFile(env.File('root/%s' % binary.name), binary))
 env.Alias('tacos-iso', iso)
 
 Return(['iso'])
