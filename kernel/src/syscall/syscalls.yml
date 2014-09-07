@@ -146,3 +146,6 @@
       type: const void*
     - name: count
       type: size_t
+
+- name: fork
+  type: pid_t

@@ -6,6 +6,7 @@ objects = env.Object([
     'close.c',
     '_exit.c',
     'fcntl.c',
+    'fork.c',
     'getcwd.c',
     'getegid.c',
     'geteuid.c',
