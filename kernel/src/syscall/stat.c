@@ -8,7 +8,7 @@
 #include "iso9660.h"
 
 int sys_stat(const char* path, struct stat* buf) {
-  struct file file;
+  struct file* file = NULL;
   int err;
   if (buf == NULL) {
     return -EFAULT;
@@ -17,9 +17,10 @@ int sys_stat(const char* path, struct stat* buf) {
   if (err != 0) {
     return err;
   }
-  err = iso9660_fstat(&file, buf);
+  err = iso9660_fstat(file, buf);
   if (err != 0) {
+    iso9660_close(file);
     return err;
   }
-  return iso9660_close(&file);
+  return iso9660_close(file);
 }

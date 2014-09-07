@@ -93,7 +93,7 @@ static const char* get_init_path(const char* cmdline) {
 
 static void start_init(const char* cmdline) {
   const char* initpath = NULL;
-  struct file file;
+  struct file* file = NULL;
   int c;
   struct stat st;
   struct Elf32_Ehdr* elf = NULL;
@@ -105,14 +105,14 @@ static void start_init(const char* cmdline) {
   }
   LOG("Found init program \"%s\"\n", initpath);
 
-  // Open the file.file
+  // Open the file.
   c = iso9660_open(initpath, O_RDONLY, &file);
   if (c != 0) {
     PANIC("Unable to open %s: %d\n", initpath, c);
   }
 
   // Stat the binary.
-  c = iso9660_fstat(&file, &st);
+  c = iso9660_fstat(file, &st);
   if (c != 0) {
     PANIC("Unable to stat %s: %d\n", initpath, c);
   }
@@ -124,7 +124,7 @@ static void start_init(const char* cmdline) {
   }
 
   // Read the binary.
-  c = iso9660_pread(&file, elf, st.st_size, 0);
+  c = iso9660_pread(file, elf, st.st_size, 0);
   if (c < 0) {
     PANIC("Failed to read %s: %d\n", initpath, c);
   }
@@ -133,7 +133,7 @@ static void start_init(const char* cmdline) {
   }
 
   // Close the file.
-  c = iso9660_close(&file);
+  c = iso9660_close(file);
   if (c != 0) {
     PANIC("Unable to close %s: %d\n", initpath, c);
   }

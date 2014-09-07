@@ -6,6 +6,8 @@
 struct file {
   const char* path;
   ino_t inode;
+
+  int ref;
 };
 
 #endif /* FILE_H */

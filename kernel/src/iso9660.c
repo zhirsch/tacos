@@ -119,7 +119,7 @@ static struct primary_volume_descriptor* get_primary_volume_descriptor(void);
 static off_t get_directory_entry_offset(char* path, struct directory_entry* entry);
 static struct directory_entry* get_directory_entry(off_t entry_offset);
 
-int iso9660_open(const char* path, int flags, struct file* file) {
+int iso9660_open(const char* path, int flags, struct file** file) {
   struct primary_volume_descriptor* pvd = NULL;
   char* p = NULL;
 
@@ -140,15 +140,19 @@ int iso9660_open(const char* path, int flags, struct file* file) {
 
   // Find the path's directory entry.
   p = strdup(path);
-  file->inode = get_directory_entry_offset(p + 1, &pvd->root);
+  *file = kmalloc(sizeof(**file));
+  (*file)->ref = 1;
+  (*file)->inode = get_directory_entry_offset(p + 1, &pvd->root);
   kfree(p);
-  if (file->inode == 0) {
+  if ((*file)->inode == 0) {
     LOG("Unable to find directory entry for %s\n", path);
     kfree(pvd);
+    kfree(*file);
+    *file = NULL;
     return -ENOENT;
   }
 
-  file->path = strdup(path);
+  (*file)->path = strdup(path);
   kfree(pvd);
   return 0;
 }
@@ -206,7 +210,11 @@ int iso9660_pread(struct file* file, void* buf, size_t count, off_t offset) {
 }
 
 int iso9660_close(struct file* file) {
-  kfree((char*)file->path);
+  --(file->ref);
+  if (file->ref == 0) {
+    kfree((char*)file->path);
+    kfree(file);
+  }
   return 0;
 }
 

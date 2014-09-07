@@ -8,7 +8,7 @@
 
 #include "file.h"
 
-int iso9660_open(const char* path, int flags, struct file* file);
+int iso9660_open(const char* path, int flags, struct file** file);
 int iso9660_fstat(struct file* file, struct stat* st);
 int iso9660_pread(struct file* file, void* buf, size_t count, off_t offset);
 int iso9660_close(struct file* file);
