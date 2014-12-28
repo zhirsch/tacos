@@ -1,14 +1,13 @@
 #include "tty.h"
 
-#include "kmalloc.h"
 #include "log.h"
-#include "mmu.h"
+#include "mmu/kmalloc.h"
 #include "process.h"
 #include "screen.h"
 
 #define FRAMEBUF_SIZE (10 * PAGESIZE / sizeof(uint16_t))
 
-#define LOG(...) log("KMAIN", __VA_ARGS__)
+#define LOG(...) log("TTY", __VA_ARGS__)
 
 static struct tty ttys[NUM_TTYS];
 static struct tty* active_tty = NULL;

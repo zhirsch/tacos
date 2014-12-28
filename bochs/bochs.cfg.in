@@ -34,7 +34,7 @@ logprefix: %t%e%d
 panic: action=ask
 error: action=report
 info: action=report
-debug: action=ignore
+debug: action=ignore #report #ignore
 keyboard_type: mf
 keyboard_serial_delay: 250
 keyboard_paste_delay: 100000

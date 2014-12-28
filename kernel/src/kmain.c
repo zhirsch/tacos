@@ -9,9 +9,9 @@
 #include "ide/ide.h"
 #include "interrupts.h"
 #include "iso9660.h"
-#include "kmalloc.h"
 #include "log.h"
-#include "mmu.h"
+#include "mmu/kmalloc.h"
+#include "mmu/physical.h"
 #include "multiboot.h"
 #include "pic.h"
 #include "portio.h"
@@ -26,6 +26,11 @@
 
 #define LOG(...) log("KMAIN", __VA_ARGS__)
 #define PANIC(...) panic("KMAIN", __VA_ARGS__)
+
+#define SEGMENT_KERNEL_CODE ((1 << 3) | 0x0)
+#define SEGMENT_KERNEL_DATA ((2 << 3) | 0x0)
+#define SEGMENT_USER_CODE   ((3 << 3) | 0x3)
+#define SEGMENT_USER_DATA   ((4 << 3) | 0x3)
 
 static void init_tss(void);
 static void announce(void);
@@ -44,7 +49,8 @@ void kmain(int magic, multiboot_info_t* mbi) {
   cmdline[sizeof(cmdline)-1] = '\0';
 
   // Initialize the address space.
-  init_mmu(mbi);
+  init_pmmu(mbi);
+  init_lmmu();
   init_tss();
 
   // Initialize the FPU.
@@ -157,7 +163,7 @@ static void start_init(const char* cmdline) {
   current_process->tss.es  = SEGMENT_USER_DATA;
   current_process->tss.fs  = SEGMENT_USER_DATA;
   current_process->tss.gs  = SEGMENT_USER_DATA;
-  current_process->tss.cr3 = mmu_get_cr3();
+  current_process->tss.cr3 = (uintptr_t)lmmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
 
   // stdin
@@ -192,7 +198,6 @@ static void start_init(const char* cmdline) {
 
 static void init_tss(void) {
   static struct tss tss __attribute__ ((aligned(PAGESIZE)));
-  extern void* kernel_stack_top;
 
   gdt[5].limit_lo    = (((uintptr_t)(sizeof(tss))) & 0x0000FFFF);
   gdt[5].base_lo     = (((uintptr_t)(&tss)) & 0x00FFFFFF);
@@ -208,7 +213,7 @@ static void init_tss(void) {
 
   memset(&tss, 0, sizeof(tss));
   tss.ss0  = SEGMENT_KERNEL_DATA;
-  tss.esp0 = (uintptr_t)&kernel_stack_top;
+  tss.esp0 = (uintptr_t)LDSYM_LADDR(kernel_stack_top);
 
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");
 }

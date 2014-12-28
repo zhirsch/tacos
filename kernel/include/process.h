@@ -6,7 +6,6 @@
 #include "bits/signal.h"
 #include "bits/types.h"
 
-#include "mmu.h"
 #include "tss.h"
 
 #define FD_STDIN  0

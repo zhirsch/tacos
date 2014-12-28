@@ -48,6 +48,7 @@ objects, boot = env.SConscript(dirs = 'asm', exports = 'env')
 objects += env.SConscript(
     dirs = [
         'ide',
+        'mmu',
         'syscall',
     ],
     exports = [
@@ -60,9 +61,7 @@ objects += env.Object([
     'interrupts.c',
     'iso9660.c',
     'kmain.c',
-    'kmalloc.c',
     'log.c',
-    'mmu.c',
     'pic.c',
     'process.c',
     'sbrk.c',

@@ -4,9 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "kmalloc.h"
 #include "log.h"
-#include "mmu.h"
+#include "mmu/kmalloc.h"
+#include "mmu/linear.h"
+#include "mmu/physical.h"
 #include "process.h"
 #include "string.h"
 
@@ -20,7 +21,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   uintptr_t end = 0;
 
   // Reset the address space to prepare for the new process.
-  mmu_reset_cr3();
+  lmmu_reset_cr3();
 
   // Parse the elf header.
   if (!check_elf_header(ehdr)) {
@@ -37,7 +38,8 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   kfree(ehdr);
 
   // Copy envp into the address space.
-  mmu_map_page(mmu_acquire_physical_page(), (void*)end, 0x1 | 0x2 | 0x4);
+  lmmu_map_page(pmmu_get_page(), (void*)end,
+                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
   LOG("envp is at %08lx\n", end);
   current_process->envp = (char**)end;
   {
@@ -58,7 +60,8 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   end += PAGESIZE;
 
   // Copy argv into the address space.
-  mmu_map_page(mmu_acquire_physical_page(), (void*)end, 0x1 | 0x2 | 0x4);
+  lmmu_map_page(pmmu_get_page(), (void*)end,
+                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
   LOG("argv is at %08lx\n", end);
   current_process->argv = (char**)end;
   {
@@ -80,7 +83,8 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   end += PAGESIZE;
 
   // Create the stack for the new process.
-  mmu_map_page(mmu_acquire_physical_page(), (void*)end, 0x1 | 0x2 | 0x4);
+  lmmu_map_page(pmmu_get_page(), (void*)end,
+                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
   LOG("esp  is at %08lx\n", end);
   {
     uint32_t* new_stack = (uint32_t*)(end + PAGESIZE);
@@ -162,8 +166,8 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
       uintptr_t dst;
       // Map the pages for the segment.
       for (dst = dst_base; dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        const uintptr_t paddr = (uintptr_t)mmu_acquire_physical_page();
-        mmu_map_page((void*)paddr, (void*)dst, 0x1 | 0x2 | 0x4);
+        lmmu_map_page(pmmu_get_page(), (void*)dst,
+                      kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
       }
       // Copy the data into the segment.
       memcpy((void*)dst_base, (void*)src_base, phdr->p_filesz);
@@ -171,7 +175,7 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
       memset((void*)bss_base, 0, bss_size);
       // Set the access permissions for the segment.
       for (dst = dst_base ;dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        mmu_set_page_flags((void*)dst, perm | 0x4);
+        lmmu_set_page_flags((void*)dst, perm | kLinearPageUserMode);
       }
       *end = dst;
       break;

@@ -2,12 +2,10 @@
 
 #include <stddef.h>
 
-#include "kmalloc.h"
 #include "log.h"
-#include "mmu.h"
 
-#define LOG(...) log("MMU", __VA_ARGS__)
-#define PANIC(...) panic("MMU", __VA_ARGS__)
+#define LOG(...) log("PROCESS", __VA_ARGS__)
+#define PANIC(...) panic("PROCESS", __VA_ARGS__)
 
 struct process* current_process = NULL;
 

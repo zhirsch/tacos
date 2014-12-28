@@ -9,9 +9,8 @@
 #include "bits/types.h"
 
 #include "ide/ide.h"
-#include "kmalloc.h"
 #include "log.h"
-#include "mmu.h"
+#include "mmu/kmalloc.h"
 #include "string.h"
 
 #define LOG(...) log("ISO9660", __VA_ARGS__)

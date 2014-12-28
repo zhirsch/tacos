@@ -1,0 +1,11 @@
+# -*- mode: python -*-
+Import('env')
+
+# Compile the sources.
+objects = env.Object([
+    'kmalloc.c',
+    'linear.c',
+    'physical.c',
+])
+
+Return(['objects'])

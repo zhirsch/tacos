@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 #include "interrupts.h"
-#include "kmalloc.h"
 #include "log.h"
+#include "mmu/kmalloc.h"
 #include "portio.h"
 #include "string.h"
 
