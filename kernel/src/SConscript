@@ -15,6 +15,7 @@ env = env.Clone(
         '-fstack-protector-all',
         '-fno-exceptions',
         '-fstack-usage',
+        '-fno-common',
         '-fno-delete-null-pointer-checks',
         '-fno-omit-frame-pointer',
         '-std=c99',

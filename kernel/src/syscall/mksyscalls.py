@@ -35,6 +35,7 @@ def main(args):
 
 def make_source(syscalls, f):
     f.write('#include "syscalls/syscalls.h"\n')
+    f.write('#include "syscall.h"\n')
     f.write('#include <stddef.h>\n')
     f.write('#include <stdint.h>\n')
     f.write('#include "bits/signal.h"\n')
@@ -66,8 +67,6 @@ def make_header(syscalls, f):
     f.write('\n')
     make_declarations(syscalls, f)
     f.write('\n')
-    make_struct(syscalls, f)
-    f.write('\n')
     f.write('#endif /* SYSCALLS_H */\n')
 
 
@@ -84,11 +83,6 @@ def make_declarations(syscalls, f):
             f.write(fmt % (syscall['type'], syscall['name'], ', '.join(args), ''))
         else:
             f.write(fmt % ('void', syscall['name'], ', '.join(args), ' __attribute__((noreturn))'))
-
-
-def make_struct(syscalls, f):
-    f.write('typedef void (*syscallfn)(struct isr_frame* frame);\n')
-    f.write('syscallfn syscalls[NSYSCALLS];\n')
 
 
 def make_stubs(syscalls, f):

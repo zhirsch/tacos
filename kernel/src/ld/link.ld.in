@@ -1,6 +1,7 @@
 OUTPUT_FORMAT("elf32-i386")
 ENTRY("_start")
 STARTUP(@@STARTUP@@);
+INHIBIT_COMMON_ALLOCATION;
 
 SECTIONS {
          /* The kernel starts at the first MiB of the fourth GiB. */

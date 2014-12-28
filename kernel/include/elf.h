@@ -42,7 +42,7 @@ struct Elf32_Ehdr {
   Elf32_Half    e_shentsize;
   Elf32_Half    e_shnum;
   Elf32_Half    e_shstrndx;
-} Elf32_Ehdr;
+};
 
 struct Elf32_Phdr {
   Elf32_Word p_type;

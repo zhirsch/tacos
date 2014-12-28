@@ -12,6 +12,8 @@
 
 #define PANIC(...) panic("SYSCALL", __VA_ARGS__)
 
+syscallfn syscalls[NSYSCALLS];
+
 static void syscall_handler(struct isr_frame* frame);
 
 void init_syscalls(void) {
