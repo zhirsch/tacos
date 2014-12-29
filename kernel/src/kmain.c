@@ -10,9 +10,9 @@
 #include "interrupts.h"
 #include "iso9660.h"
 #include "log.h"
+#include "mmu/common.h"
 #include "mmu/kmalloc.h"
 #include "mmu/linear.h"
-#include "mmu/physical.h"
 #include "multiboot.h"
 #include "pic.h"
 #include "portio.h"
@@ -50,8 +50,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   cmdline[sizeof(cmdline)-1] = '\0';
 
   // Initialize the address space.
-  init_pmmu(mbi);
-  init_lmmu();
+  init_mmu(mbi);
   init_tss();
 
   // Initialize the FPU.

@@ -3,6 +3,7 @@ Import('env')
 
 # Compile the sources.
 objects = env.Object([
+    'common.c',
     'kmalloc.c',
     'linear.c',
     'physical.c',

@@ -3,6 +3,12 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+
+#include "multiboot.h"
+
+// Initializes the MMU.  Should only be called once.
+void init_mmu(multiboot_info_t* mbi);
 
 // The size of each page.
 #define PAGESIZE 4096
@@ -14,7 +20,7 @@ typedef struct PAddr* PAddr;
 #define LDSYM_PADDR(x) ((PAddr)(&(LDSYM_paddr_ ## x)))
 #define LADDR_TO_PADDR(x) ((PAddr)((uintptr_t)(x) - (uintptr_t)LDSYM_LADDR(origin)))
 
-// Symbols that mark parts of the kernel's address space.
+// Symbols that mark parts of the kernel's linear address space.
 extern LAddr LDSYM_laddr_kernel_heap_start;
 extern LAddr LDSYM_laddr_kernel_pmmu_page_stack_bottom;
 extern LAddr LDSYM_laddr_kernel_stack_bottom;
@@ -23,6 +29,8 @@ extern LAddr LDSYM_laddr_kernel_stack_top;
 extern LAddr LDSYM_laddr_kernel_stack_top_fence;
 extern LAddr LDSYM_laddr_kernel_start;
 extern LAddr LDSYM_laddr_origin;
+
+// Symbols that mark parts of the kernel's physical address space.
 extern PAddr LDSYM_paddr_kernel_end;
 extern PAddr LDSYM_paddr_kernel_pagedir;
 extern PAddr LDSYM_paddr_kernel_ro_end;

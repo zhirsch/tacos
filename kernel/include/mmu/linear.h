@@ -5,7 +5,6 @@
 
 #include "mmu/common.h"
 #include "mmu/physical.h"
-#include "multiboot.h"
 
 static inline uintptr_t mmu_round_to_next_page(uintptr_t addr) {
   return (addr & ~(PAGESIZE - 1)) + (addr % PAGESIZE > 0) * PAGESIZE;
