@@ -1,11 +1,12 @@
 #include "tty.h"
 
 #include "log.h"
-#include "mmu/kmalloc.h"
+#include "mmu/common.h"
+#include "mmu/heap.h"
 #include "process.h"
 #include "screen.h"
 
-#define FRAMEBUF_SIZE (10 * PAGESIZE / sizeof(uint16_t))
+#define FRAMEBUF_SIZE (10 * PAGESIZE * sizeof(uint16_t))
 
 #define LOG(...) log("TTY", __VA_ARGS__)
 

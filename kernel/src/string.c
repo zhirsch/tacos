@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "mmu/kmalloc.h"
+#include "mmu/heap.h"
 
 void* memcpy(void* dest, const void* src, size_t n) {
   return memmove(dest, src, n);

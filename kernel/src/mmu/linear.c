@@ -6,7 +6,6 @@
 
 #include "interrupts.h"
 #include "log.h"
-#include "mmu/kmalloc.h"
 #include "mmu/physical.h"
 #include "multiboot.h"
 #include "string.h"

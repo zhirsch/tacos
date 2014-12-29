@@ -25,9 +25,8 @@ void mmu_unmap_page(void* laddr);
 // already mapped.
 void mmu_set_page_flags(void* laddr, uint8_t flags);
 
-// Maps a linear address (which must be page aligned) to a physical page that's
-// accesible from user space.  The address is marked read/write.  This is a
-// convinence method for calling mmu_map_page with the appropriate flags.
+// Convinience functions for calling mmu_map_page with the right flags.
+void mmu_map_system_rw_page(void* laddr);
 void mmu_map_user_rw_page(void* laddr);
 
 // The size of each page.
@@ -41,6 +40,7 @@ typedef struct PAddr* PAddr;
 #define LADDR_TO_PADDR(x) ((PAddr)((uintptr_t)(x) - (uintptr_t)LDSYM_LADDR(origin)))
 
 // Symbols that mark parts of the kernel's linear address space.
+extern LAddr LDSYM_laddr_kernel_heap_end;
 extern LAddr LDSYM_laddr_kernel_heap_start;
 extern LAddr LDSYM_laddr_kernel_pmmu_page_stack_bottom;
 extern LAddr LDSYM_laddr_kernel_stack_bottom;

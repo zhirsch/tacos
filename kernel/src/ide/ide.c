@@ -4,7 +4,7 @@
 
 #include "interrupts.h"
 #include "log.h"
-#include "mmu/kmalloc.h"
+#include "mmu/heap.h"
 #include "portio.h"
 #include "string.h"
 

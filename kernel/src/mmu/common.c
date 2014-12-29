@@ -21,6 +21,10 @@ void mmu_set_page_flags(void* laddr, uint8_t flags) {
   lmmu_set_page_flags(laddr, flags);
 }
 
+void mmu_map_system_rw_page(void* laddr) {
+  mmu_map_page(laddr, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
+}
+
 void mmu_map_user_rw_page(void* laddr) {
   mmu_map_page(laddr, MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER);
 }

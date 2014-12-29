@@ -10,7 +10,7 @@
 
 #include "ide/ide.h"
 #include "log.h"
-#include "mmu/kmalloc.h"
+#include "mmu/heap.h"
 #include "string.h"
 
 #define LOG(...) log("ISO9660", __VA_ARGS__)
