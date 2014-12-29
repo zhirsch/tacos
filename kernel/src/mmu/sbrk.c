@@ -4,8 +4,6 @@
 
 #include "log.h"
 #include "mmu/common.h"
-#include "mmu/linear.h"
-#include "mmu/physical.h"
 
 #define LOG(...) log("SBRK", __VA_ARGS__)
 #define PANIC(...) panic("SBRK", __VA_ARGS__)
@@ -17,6 +15,9 @@ static void assert(int cond);
 
 void mmu_sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   uintptr_t extra = 0;
+  // TODO: The flags shouldn't include MMU_PAGE_USER if this is for the kernel break.
+  // TODO: Use my own kmalloc implementation and there won't be a kernel break.
+  const uint8_t flags = MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
 
   if (*cpb & 0x00000FFF) {
     extra = PAGESIZE - (*cpb & 0x00000FFF);
@@ -43,13 +44,13 @@ void mmu_sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   // The current program break is aligned to a page boundary.  Allocate enough
   // pages to cover the increment.
   while (increment >= PAGESIZE) {
-    lmmu_map_page(pmmu_get_page(), (LAddr)*cpb, kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+    mmu_map_page((void*)*cpb, flags);
     *cpb += PAGESIZE;
     increment -= PAGESIZE;
   }
   // Handle any amount that's greater than a multiple of PAGESIZE.
   if (increment > 0) {
-    lmmu_map_page(pmmu_get_page(), (LAddr)*cpb, kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+    mmu_map_page((void*)*cpb, flags);
     *cpb += increment;
     increment = 0;
   }
@@ -82,11 +83,10 @@ void mmu_sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   assert(extra == 0);
   assert(*cpb % PAGESIZE == 0);
 
-  // The current program break is aligned to a page boundary.  Allocate enough
-  // pages to cover the increment.
+  // The current program break is aligned to a page boundary.  Free enough pages
+  // to satisfy the decrement.
   while (decrement >= PAGESIZE) {
-    const PAddr paddr = lmmu_unmap_page((LAddr)*cpb);
-    pmmu_put_page(paddr);
+    mmu_unmap_page((void*)*cpb);
     *cpb -= PAGESIZE;
     decrement -= PAGESIZE;
   }

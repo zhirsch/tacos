@@ -58,48 +58,48 @@ void init_lmmu() {
   interrupt_register_handler(0xe, page_fault_handler);
 
   // Map the last PDE to the page directory.
-  kernel_pagedir[1023] = ((uintptr_t)kernel_pagedir - (uintptr_t)LDSYM_LADDR(origin)) | kLinearPagePresent | kLinearPageReadWrite;
+  kernel_pagedir[1023] = ((uintptr_t)kernel_pagedir - (uintptr_t)LDSYM_LADDR(origin)) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
   __asm__ __volatile__ ("mov %%cr3, %%eax; mov %%eax, %%cr3" : : : "eax", "memory");
 
   // Remove the identity mapping for the first page.
   set_page_directory_entry((LAddr)(0x0000000), 0);
 
   // Identity map VGA memory.
-  lmmu_map_page((PAddr)0x000B8000, (LAddr)0x000B8000, kLinearPagePresent | kLinearPageReadWrite);
+  lmmu_map_page((PAddr)0x000B8000, (LAddr)0x000B8000, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 
   // Re-map the kernel with PTEs.  Map the new PTEs into a temporary location,
   // then unmap them and map them into the right location.
-  lmmu_map_page(pmmu_get_page(), (LAddr)temp, kLinearPagePresent | kLinearPageReadWrite);
+  lmmu_map_page(pmmu_get_page(), (LAddr)temp, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
   for (int i = 0; i < 1024; i++) {
     const PAddr paddr = (PAddr)(PAGESIZE * i);
     if (paddr_within(LDSYM_PADDR(kernel_ro_start), paddr, LDSYM_PADDR(kernel_ro_end))) {
-      temp[i] = (uintptr_t)paddr | kLinearPagePresent;
+      temp[i] = (uintptr_t)paddr | MMU_PAGE_PRESENT;
     } else if (paddr_within(LDSYM_PADDR(kernel_stack_bottom_fence), paddr, LDSYM_PADDR(kernel_stack_bottom))) {
       temp[i] = 0;
     } else if (paddr_within(LDSYM_PADDR(kernel_stack_top), paddr, LDSYM_PADDR(kernel_stack_top_fence))) {
       temp[i] = 0;
     } else if (paddr_within(LDSYM_PADDR(kernel_rw_start), paddr, LDSYM_PADDR(kernel_rw_end))) {
-      temp[i] = (uintptr_t)paddr | kLinearPagePresent | kLinearPageReadWrite;
+      temp[i] = (uintptr_t)paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
     } else if (pmmu_is_paddr_within_stack(paddr)) {
-      temp[i] = (uintptr_t)paddr | kLinearPagePresent | kLinearPageReadWrite;
+      temp[i] = (uintptr_t)paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
     } else {
       temp[i] = 0;
     }
   }
   set_page_directory_entry(LDSYM_LADDR(kernel_start),
-                           (uintptr_t)lmmu_unmap_page((LAddr)temp) | kLinearPagePresent | kLinearPageReadWrite);
+                           (uintptr_t)lmmu_unmap_page((LAddr)temp) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 }
 
-void lmmu_map_page(PAddr paddr, LAddr laddr, enum LinearPageFlags flags) {
-  if (!(get_page_directory_entry(laddr) & kLinearPagePresent)) {
-    set_page_directory_entry(laddr, (uintptr_t)pmmu_get_page() | kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+void lmmu_map_page(PAddr paddr, LAddr laddr, uint8_t flags) {
+  if (!(get_page_directory_entry(laddr) & MMU_PAGE_PRESENT)) {
+    set_page_directory_entry(laddr, (uintptr_t)pmmu_get_page() | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER);
   }
   set_page_table_entry(laddr, (uintptr_t)paddr | (flags & 0xFFF));
 }
 
 PAddr lmmu_unmap_page(LAddr laddr) {
   const uint32_t pte = get_page_table_entry(laddr);
-  if (!(pte & kLinearPagePresent)) {
+  if (!(pte & MMU_PAGE_PRESENT)) {
     PANIC("mmu_unmap_page(%p) is unmapped: %08lx\n", (void*)laddr, pte);
   }
   set_page_table_entry(laddr, 0);
@@ -107,9 +107,9 @@ PAddr lmmu_unmap_page(LAddr laddr) {
   return (PAddr)(pte & 0xFFFFF000);
 }
 
-void lmmu_set_page_flags(LAddr laddr, enum LinearPageFlags flags) {
+void lmmu_set_page_flags(LAddr laddr, uint8_t flags) {
   const uint32_t pte = get_page_table_entry(laddr);
-  if (!(pte & kLinearPagePresent)) {
+  if (!(pte & MMU_PAGE_PRESENT)) {
     PANIC("mmu_set_page_flags(%p) is unmapped: %08lx\n", (void*)laddr, pte);
   }
   set_page_table_entry(laddr, (pte & 0xFFFFF000) | (flags & 0xFFF));
@@ -137,7 +137,7 @@ void lmmu_reset_cr3(void) {
 PAddr lmmu_new_page_directory(void) {
   const PAddr new_pagedir_paddr = pmmu_get_page();
   uint32_t* temp = (uint32_t*)0xB0000000;
-  lmmu_map_page(new_pagedir_paddr, (LAddr)temp, kLinearPagePresent | kLinearPageReadWrite);
+  lmmu_map_page(new_pagedir_paddr, (LAddr)temp, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 
   // Copy the last fourth of the existing page directory.  This copies the
   // kernel mappings.
@@ -147,7 +147,7 @@ PAddr lmmu_new_page_directory(void) {
 
   // Map the new page directory as the last entry so that the page directory can
   // easily be refernced.
-  temp[1023] = (uint32_t)new_pagedir_paddr | kLinearPagePresent | kLinearPageReadWrite;
+  temp[1023] = (uint32_t)new_pagedir_paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
 
   // Unmap the new page directory.
   lmmu_unmap_page((LAddr)temp);

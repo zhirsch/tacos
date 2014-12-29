@@ -38,8 +38,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   kfree(ehdr);
 
   // Copy envp into the address space.
-  lmmu_map_page(pmmu_get_page(), (void*)end,
-                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+  mmu_map_user_rw_page((void*)end);
   LOG("envp is at %08lx\n", end);
   current_process->envp = (char**)end;
   {
@@ -60,8 +59,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   end += PAGESIZE;
 
   // Copy argv into the address space.
-  lmmu_map_page(pmmu_get_page(), (void*)end,
-                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+  mmu_map_user_rw_page((void*)end);
   LOG("argv is at %08lx\n", end);
   current_process->argv = (char**)end;
   {
@@ -83,8 +81,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   end += PAGESIZE;
 
   // Create the stack for the new process.
-  lmmu_map_page(pmmu_get_page(), (void*)end,
-                kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+  mmu_map_user_rw_page((void*)end);
   LOG("esp  is at %08lx\n", end);
   {
     uint32_t* new_stack = (uint32_t*)(end + PAGESIZE);
@@ -162,20 +159,19 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
       const uintptr_t dst_base = phdr->p_vaddr;
       const uintptr_t bss_base = phdr->p_vaddr + phdr->p_filesz;
       const size_t    bss_size = phdr->p_memsz - phdr->p_filesz;
-      const uint8_t   perm     = (phdr->p_flags == 0x5) ? 0x1 : 0x3;
+      const uint8_t   perm     = (phdr->p_flags == 0x5) ? 0 : MMU_PAGE_WRITE;
       uintptr_t dst;
       // Map the pages for the segment.
       for (dst = dst_base; dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        lmmu_map_page(pmmu_get_page(), (void*)dst,
-                      kLinearPagePresent | kLinearPageReadWrite | kLinearPageUserMode);
+        mmu_map_user_rw_page((void*)dst);
       }
       // Copy the data into the segment.
       memcpy((void*)dst_base, (void*)src_base, phdr->p_filesz);
       // Zero out the BSS.
       memset((void*)bss_base, 0, bss_size);
       // Set the access permissions for the segment.
-      for (dst = dst_base ;dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        lmmu_set_page_flags((void*)dst, perm | kLinearPageUserMode);
+      for (dst = dst_base; dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
+        mmu_set_page_flags((void*)dst, MMU_PAGE_PRESENT | MMU_PAGE_USER | perm);
       }
       *end = dst;
       break;

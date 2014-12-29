@@ -13,24 +13,18 @@ static inline uintptr_t mmu_round_to_next_page(uintptr_t addr) {
 // Initialize the linear MMU.  Should only be called once.
 void init_lmmu();
 
-enum LinearPageFlags {
-  kLinearPagePresent   = 1 << 0,
-  kLinearPageReadWrite = 1 << 1,
-  kLinearPageUserMode  = 1 << 2,
-};
-
 // Map a physical address to a virtual address, with flags.
 // Common flags:
 //   0x1 - read-only
 //   0x3 - read-write
-void lmmu_map_page(PAddr paddr, LAddr laddr, enum LinearPageFlags flags);
+void lmmu_map_page(PAddr paddr, LAddr laddr, uint8_t flags);
 
 // Unmap a virtual address.  Does not free any physical pages.  Returns the
 // address of the physical page that was mapped.
 PAddr lmmu_unmap_page(LAddr laddr);
 
 // Sets the flags for the page.
-void lmmu_set_page_flags(LAddr laddr, enum LinearPageFlags flags);
+void lmmu_set_page_flags(LAddr laddr, uint8_t flags);
 
 // Gets the value of the cr3 register.
 PAddr lmmu_get_cr3(void);

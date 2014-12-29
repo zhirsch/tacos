@@ -10,6 +10,26 @@
 // Initializes the MMU.  Should only be called once.
 void init_mmu(multiboot_info_t* mbi);
 
+#define MMU_PAGE_PRESENT 1
+#define MMU_PAGE_WRITE   2
+#define MMU_PAGE_USER    4
+
+// Maps a linear address (which must be page aligned) to a physical page with
+// the given flags.
+void mmu_map_page(void* laddr, uint8_t flags);
+
+// Unmaps a linear address.  If the underlying page is no longer used, frees it.
+void mmu_unmap_page(void* laddr);
+
+// Sets the flags for a linear address (which must be page aligned) that is
+// already mapped.
+void mmu_set_page_flags(void* laddr, uint8_t flags);
+
+// Maps a linear address (which must be page aligned) to a physical page that's
+// accesible from user space.  The address is marked read/write.  This is a
+// convinence method for calling mmu_map_page with the appropriate flags.
+void mmu_map_user_rw_page(void* laddr);
+
 // The size of each page.
 #define PAGESIZE 4096
 
