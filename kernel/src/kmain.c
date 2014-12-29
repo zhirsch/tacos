@@ -11,6 +11,7 @@
 #include "iso9660.h"
 #include "log.h"
 #include "mmu/kmalloc.h"
+#include "mmu/linear.h"
 #include "mmu/physical.h"
 #include "multiboot.h"
 #include "pic.h"

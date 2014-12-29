@@ -1,4 +1,4 @@
-#include "sbrk.h"
+#include "mmu/sbrk.h"
 
 #include <stdint.h>
 
@@ -10,9 +10,12 @@
 #define LOG(...) log("SBRK", __VA_ARGS__)
 #define PANIC(...) panic("SBRK", __VA_ARGS__)
 
+static uintptr_t current_kernel_program_break = (uintptr_t)LDSYM_LADDR(kernel_heap_start);
+// TODO: Detect when the kernel is out of heap space.
+
 static void assert(int cond);
 
-void sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
+void mmu_sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   uintptr_t extra = 0;
 
   if (*cpb & 0x00000FFF) {
@@ -54,7 +57,7 @@ void sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   assert(increment == 0);
 }
 
-void sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
+void mmu_sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   uintptr_t extra = 0;
 
   if (*cpb & 0x00000FFF) {
@@ -94,6 +97,19 @@ void sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   }
 
   assert(decrement == 0);
+}
+
+void* mmu_kmorecore(intptr_t increment) {
+  const uintptr_t vaddr = current_kernel_program_break;
+  // Make sure that a multiple of a page was requested.
+  if (increment & (PAGESIZE - 1)) {
+    PANIC("ksbrk(%lx) is not page aligned\n", increment);
+  } else if (increment < 0) {
+    mmu_sbrk_shrink(&current_kernel_program_break, -increment);
+  } else if (increment > 0) {
+    mmu_sbrk_grow(&current_kernel_program_break, increment);
+  }
+  return (void*)vaddr;
 }
 
 static void assert(int cond) {

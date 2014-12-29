@@ -39,7 +39,4 @@ PAddr lmmu_get_cr3(void);
 // Unmaps all pages in the current page directory, except for the kernel.
 void lmmu_reset_cr3(void);
 
-// Kernel's implementation of sbrk.
-void* lmmu_sbrk(intptr_t increment);
-
 #endif /* MMU_LINEAR_H */

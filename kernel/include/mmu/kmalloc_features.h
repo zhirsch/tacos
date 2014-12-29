@@ -5,7 +5,8 @@
 #include <stdint.h>
 
 #include "log.h"
-#include "mmu/linear.h"
+#include "mmu/common.h"
+#include "mmu/sbrk.h"
 
 // Rename all the public functions to start with a "k".
 #define USE_DL_PREFIX
@@ -52,6 +53,6 @@
 // Define functions that kmalloc calls.
 #define ABORT                 panic("KMALLOC", "failed\n");
 #define MALLOC_FAILURE_ACTION { } /* Do nothing */
-#define MORECORE              lmmu_sbrk
+#define MORECORE              mmu_kmorecore
 
 #endif /* KMALLOC_FEATURES_H */

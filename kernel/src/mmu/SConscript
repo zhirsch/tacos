@@ -6,6 +6,7 @@ objects = env.Object([
     'kmalloc.c',
     'linear.c',
     'physical.c',
+    'sbrk.c',
 ])
 
 Return(['objects'])

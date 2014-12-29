@@ -9,7 +9,6 @@
 #include "mmu/kmalloc.h"
 #include "mmu/physical.h"
 #include "multiboot.h"
-#include "sbrk.h"
 #include "string.h"
 
 #define LOG(...) log("LMMU", __VA_ARGS__)
@@ -50,8 +49,6 @@ static inline void set_page_table_entry(LAddr laddr, uintptr_t entry) {
   kPageTables[get_page_table_index(laddr)] = entry;
   invlpg(laddr);
 }
-
-static uintptr_t kernel_program_break = 0xE0000000;
 
 extern uint32_t kernel_pagedir[1024];
 
@@ -162,19 +159,6 @@ PAddr lmmu_get_cr3(void) {
   uintptr_t cr3;
   __asm__ __volatile__ ("mov %%cr3, %0" : "=g" (cr3));
   return (PAddr)cr3;
-}
-
-void* lmmu_sbrk(intptr_t increment) {
-  const uintptr_t vaddr = kernel_program_break;
-  // Make sure that a multiple of a page was requested.
-  if (increment & (PAGESIZE - 1)) {
-    PANIC("ksbrk(%lx) is not page aligned\n", increment);
-  } else if (increment < 0) {
-    sbrk_shrink(&kernel_program_break, -increment);
-  } else if (increment > 0) {
-    sbrk_grow(&kernel_program_break, increment);
-  }
-  return (void*)vaddr;
 }
 
 static void page_fault_handler(struct isr_frame* frame) {

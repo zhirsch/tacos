@@ -15,6 +15,7 @@ typedef struct PAddr* PAddr;
 #define LADDR_TO_PADDR(x) ((PAddr)((uintptr_t)(x) - (uintptr_t)LDSYM_LADDR(origin)))
 
 // Symbols that mark parts of the kernel's address space.
+extern LAddr LDSYM_laddr_kernel_heap_start;
 extern LAddr LDSYM_laddr_kernel_pmmu_page_stack_bottom;
 extern LAddr LDSYM_laddr_kernel_stack_bottom;
 extern LAddr LDSYM_laddr_kernel_stack_bottom_fence;
