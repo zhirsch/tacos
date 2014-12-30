@@ -159,3 +159,9 @@
       type: const sigset_t*
     - name: oldset
       type: sigset_t*
+
+- name: sigsuspend
+  type: int
+  args:
+    - name: mask
+      type: const sigset_t*
