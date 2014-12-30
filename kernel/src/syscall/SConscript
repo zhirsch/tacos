@@ -23,6 +23,7 @@ objects = env.Object([
     'setpgid.c',
     'sigaction.c',
     'sigfillset.c',
+    'sigprocmask.c',
     'stat.c',
     'tcgetpgrp.c',
     'tcsetpgrp.c',

@@ -149,3 +149,13 @@
 
 - name: fork
   type: pid_t
+
+- name: sigprocmask
+  type: int
+  args:
+    - name: how
+      type: int
+    - name: set
+      type: const sigset_t*
+    - name: oldset
+      type: sigset_t*
