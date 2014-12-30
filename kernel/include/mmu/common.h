@@ -29,6 +29,9 @@ void mmu_set_page_flags(void* laddr, uint8_t flags);
 void mmu_map_system_rw_page(void* laddr);
 void mmu_map_user_rw_page(void* laddr);
 
+// Makes a copy of the current address space.
+uintptr_t mmu_clone_address_space(void);
+
 // The size of each page.
 #define PAGESIZE 4096
 
@@ -52,7 +55,6 @@ extern LAddr LDSYM_laddr_origin;
 
 // Symbols that mark parts of the kernel's physical address space.
 extern PAddr LDSYM_paddr_kernel_end;
-extern PAddr LDSYM_paddr_kernel_pagedir;
 extern PAddr LDSYM_paddr_kernel_ro_end;
 extern PAddr LDSYM_paddr_kernel_ro_start;
 extern PAddr LDSYM_paddr_kernel_rw_end;

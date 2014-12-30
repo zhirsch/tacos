@@ -57,11 +57,14 @@ struct process {
   // The TSS for storing the interrupted state of the process.
   struct tss tss;
 
-  // The page that stores the args and environment passed to the process.
-  uintptr_t args_paddr;
-
   // The location of the program break, where the heap grows from.
   uintptr_t program_break;
+
+  // The list of all children of this process.
+  struct child {
+    struct process* child;
+    struct child* next;
+  }* children;
 
   // TODO(zhirsch): Include:
   //  * The ELF pages. (when should they be deallocated?)
@@ -72,5 +75,7 @@ extern struct process* current_process;
 
 pid_t process_next_pid(void);
 pid_t process_next_pgid(void);
+
+int process_fork(struct process** child);
 
 #endif /* PROCESS_H */
