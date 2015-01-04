@@ -18,7 +18,7 @@ void mmu_map_page(void* laddr, uint8_t flags) {
 }
 
 void mmu_unmap_page(void* laddr) {
-  pmmu_put_page(lmmu_unmap_page((LAddr)laddr));
+  pmmu_put_page(lmmu_unmap_page(laddr));
 }
 
 void mmu_set_page_flags(void* laddr, uint8_t flags) {
@@ -34,12 +34,12 @@ void mmu_map_user_rw_page(void* laddr) {
 }
 
 static uintptr_t mmu_clone_page(int pt, int pg) {
-  uint32_t* old = (uint32_t*)((pt * 1024 + pg) * PAGESIZE);
-  uint32_t* new = (uint32_t*)0xEFFFD000;
-  LOG("Cloning page %p\n", (void*)old);
+  void* old = (void*)((pt * 1024 + pg) * PAGESIZE);
+  void* new = (void*)0xEFFFD000;
+  LOG("Cloning page %p\n", old);
   mmu_map_system_rw_page(new);
   memcpy(new, old, PAGESIZE);
-  return (uintptr_t)lmmu_unmap_page((LAddr)new);
+  return lmmu_unmap_page(new);
 }
 
 static uintptr_t mmu_clone_page_table(int pt) {
@@ -57,7 +57,7 @@ static uintptr_t mmu_clone_page_table(int pt) {
     }
     new[i] = mmu_clone_page(pt, i) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
   }
-  return (uintptr_t)lmmu_unmap_page((LAddr)new);
+  return lmmu_unmap_page(new);
 }
 
 uintptr_t mmu_clone_address_space(void) {
@@ -75,5 +75,5 @@ uintptr_t mmu_clone_address_space(void) {
     }
     new[i] = mmu_clone_page_table(i) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
   }
-  return (uintptr_t)lmmu_unmap_page((LAddr)new);
+  return lmmu_unmap_page(new);
 }

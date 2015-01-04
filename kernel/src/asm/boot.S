@@ -34,7 +34,7 @@ _start:
 
 .L2:
               //    Set the stack.
-              movl  $LDSYM_laddr_kernel_stack_top, %esp
+              movl  $kernel_stack_start, %esp
               //    Reset EFLAGS.
               pushl $0
               popf

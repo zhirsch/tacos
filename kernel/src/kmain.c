@@ -9,6 +9,7 @@
 #include "ide/ide.h"
 #include "interrupts.h"
 #include "iso9660.h"
+#include "ldsyms.h"
 #include "log.h"
 #include "mmu/common.h"
 #include "mmu/heap.h"
@@ -196,6 +197,8 @@ static void start_init(const char* cmdline) {
   }
 }
 
+extern const void kernel_stack_start;
+
 static void init_tss(void) {
   static struct tss tss __attribute__ ((aligned(PAGESIZE)));
 
@@ -213,7 +216,7 @@ static void init_tss(void) {
 
   memset(&tss, 0, sizeof(tss));
   tss.ss0  = SEGMENT_KERNEL_DATA;
-  tss.esp0 = (uintptr_t)LDSYM_LADDR(kernel_stack_top);
+  tss.esp0 = (uintptr_t)&kernel_stack_start;
 
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");
 }

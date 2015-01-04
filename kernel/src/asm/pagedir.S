@@ -9,5 +9,9 @@ kernel_pagedir:
 
               //    0xC0000000 -> 0x00000000 (rw)
               .long 0x00000083
+              //    0xC0400000 -> 0x00400000 (rw)
+              .long 0x00400083
 
-              .skip 255 * 4, 0
+              .skip 254 * 4, 0
+
+              .size kernel_pagedir, . - kernel_pagedir
