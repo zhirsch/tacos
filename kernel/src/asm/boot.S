@@ -3,6 +3,7 @@
 _start:
               //    Multiboot starts execution here with %eip set to a physical address.
               //    The first thing is to configure virtual memory.
+              call  init_kernel_pagedir
               mov   $kernel_pagedir - 0xC0000000, %ecx
               mov   %ecx, %cr3
               //    Set PSE.

@@ -54,45 +54,32 @@ extern uintptr_t kernel_pagedir[1024];
 extern const void kernel_stack_end;
 
 void init_lmmu() {
-  uint32_t* temp = (uint32_t*)0xB0000000;
-
   interrupt_register_handler(0xe, page_fault_handler);
 
-  // Map the last PDE to the page directory.
-  kernel_pagedir[1023] = ((uintptr_t)kernel_pagedir - (uintptr_t)&kernel_origin) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
-  __asm__ __volatile__ ("mov %%cr3, %%eax; mov %%eax, %%cr3" : : : "eax", "memory");
-
-  // Remove the identity mapping for the first page.
+  // Remove the identity mapping for the first page, except for VGA memory.
   set_page_directory_entry((void*)(0x0000000), 0);
-
-  // Identity map VGA memory.
   lmmu_map_page(0x000B8000, (void*)0x000B8000, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 
-  // Re-map the kernel with PTEs.  Map the new PTEs into a temporary location,
-  // then unmap them and map them into the right location.
-  lmmu_map_page(pmmu_get_page(), (void*)temp, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
-  for (int i = 0; i < 1024; i++) {
-    const uintptr_t paddr = PAGESIZE * i;
-    if ((uintptr_t)&kernel_ro_start <= paddr && paddr < (uintptr_t)&kernel_ro_end) {
+  // Update the page directory to reflect the right permissions and unmapped pages.
+  for (int i = 0; i < 255 * 1024; i++) {
+    const uintptr_t addr = 0xC0000000 + PAGESIZE * i;
+    if ((uintptr_t)&kernel_ro_start <= addr && addr < (uintptr_t)&kernel_ro_end) {
       // The read only part is read only.
-      temp[i] = paddr | MMU_PAGE_PRESENT;
-    } else if (paddr == (uintptr_t)&kernel_stack_end) {
+      g_page_tables[addr >> 12] = (addr - 0xC0000000) | MMU_PAGE_PRESENT;
+    } else if (addr == (uintptr_t)&kernel_stack_end) {
       // The last page of the stack is unmapped to prevent overflow.
-      temp[i] = 0;
-    } else if ((uintptr_t)&kernel_rw_start <= paddr && paddr < (uintptr_t)&kernel_rw_end) {
+      g_page_tables[addr >> 12] = 0;
+    } else if ((uintptr_t)&kernel_rw_start <= addr && addr < (uintptr_t)&kernel_rw_end) {
       // The writable part is writable.
-      temp[i] = paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
-    } else /*if (pmmu_is_paddr_within_stack(paddr)) */{
-      // The physical page map is writable.
-      temp[i] = paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
-#if 0
+      g_page_tables[addr >> 12] = (addr - 0xC0000000) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
     } else {
       // Everything else is unmapped.
-      temp[i] = 0;
-#endif
+      g_page_tables[addr >> 12] = 0;
     }
   }
-  set_page_directory_entry(&kernel_start, lmmu_unmap_page(temp) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
+
+  // Reload cr3 to clear the tlb.
+  __asm__ __volatile__ ("mov %%cr3, %%eax; mov %%eax, %%cr3" : : : "eax", "memory");
 }
 
 void lmmu_map_page(uintptr_t paddr, void* laddr, uint8_t flags) {
