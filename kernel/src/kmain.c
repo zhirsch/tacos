@@ -70,7 +70,6 @@ void kmain(int magic, multiboot_info_t* mbi) {
   init_syscalls();
 
   // Initialize IDE.
-  __asm__ __volatile__ ("sti");
   init_ide();
 
   // Start the init program.  This doesn't return.
