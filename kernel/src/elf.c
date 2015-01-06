@@ -99,7 +99,6 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
 
   // Switch to the new process in ring 3.
   {
-    extern void switch_to_ring3(uint16_t cs, uint32_t eip, uint16_t ss, uint32_t esp, uint32_t eflags) __attribute__ ((noreturn));
     switch_to_ring3(current_process->tss.cs,
                     current_process->tss.eip,
                     current_process->tss.ss,

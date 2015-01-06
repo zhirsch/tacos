@@ -10,7 +10,7 @@
 
 pid_t sys_fork(struct isr_frame* frame) {
   struct process* child = NULL;
-  int c = process_fork(&child);
+  int c = process_fork(&child, frame);
   if (c < 0) {
     // Error.
     return c;

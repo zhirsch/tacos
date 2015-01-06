@@ -29,11 +29,6 @@
 #define LOG(...) log("KMAIN", __VA_ARGS__)
 #define PANIC(...) panic("KMAIN", __VA_ARGS__)
 
-#define SEGMENT_KERNEL_CODE ((1 << 3) | 0x0)
-#define SEGMENT_KERNEL_DATA ((2 << 3) | 0x0)
-#define SEGMENT_USER_CODE   ((3 << 3) | 0x3)
-#define SEGMENT_USER_DATA   ((4 << 3) | 0x3)
-
 static void init_tss(void);
 static void announce(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));

@@ -6,6 +6,7 @@
 #include "bits/signal.h"
 #include "bits/types.h"
 
+#include "interrupts.h"
 #include "tss.h"
 
 #define FD_STDIN  0
@@ -14,6 +15,11 @@
 #define NUM_FDS 16
 
 #define PGID_NONE 0
+
+#define SEGMENT_KERNEL_CODE ((1 << 3) | 0x0)
+#define SEGMENT_KERNEL_DATA ((2 << 3) | 0x0)
+#define SEGMENT_USER_CODE   ((3 << 3) | 0x3)
+#define SEGMENT_USER_DATA   ((4 << 3) | 0x3)
 
 struct process {
   // The pids of this process, its parent, and its process group.
@@ -65,9 +71,6 @@ struct process {
     struct process* child;
     struct child* next;
   }* children;
-
-  // TODO(zhirsch): Include:
-  //  * The ELF pages. (when should they be deallocated?)
 };
 
 // The current running process.
@@ -76,6 +79,8 @@ extern struct process* current_process;
 pid_t process_next_pid(void);
 pid_t process_next_pgid(void);
 
-int process_fork(struct process** child);
+int process_fork(struct process** child, struct isr_frame* parent_frame);
+
+void switch_to_ring3(uint16_t cs, uint32_t eip, uint16_t ss, uint32_t esp, uint32_t eflags) __attribute__ ((noreturn));
 
 #endif /* PROCESS_H */

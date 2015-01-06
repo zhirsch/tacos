@@ -21,4 +21,8 @@ switch_to_ring3:
               push  0x8(%ebp)       // cs
               push  0xc(%ebp)       // eip
 
+              //    Set eax to 0, as if this was a function call that returns 0.
+              //    This allows this function to be used to return to the child process created by fork.
+              mov   $0, %eax
+
               iret

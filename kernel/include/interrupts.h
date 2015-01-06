@@ -14,7 +14,11 @@ struct isr_frame {
   uint32_t eax;
   int vector;
   int error_code;
-  uint32_t eip;
+  uint32_t user_eip;
+  uint32_t user_cs;
+  uint32_t user_eflags;
+  uint32_t user_esp;
+  uint32_t user_ss;
 } __attribute__ ((packed));
 
 typedef void (*interrupt_handler_func)(struct isr_frame* frame);

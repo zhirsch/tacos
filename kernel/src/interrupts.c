@@ -79,7 +79,7 @@ void isr_common(struct isr_frame* frame) {
     handlers[frame->vector](frame);
   } else {
     LOG("vector=%02x code=%08x\n", frame->vector, frame->error_code);
-    print_call_stack(frame->eip, frame->ebp);
+    print_call_stack(frame->user_eip, frame->ebp);
     PANIC("  unhandled (%s)!\n", (exceptions[frame->vector] == NULL) ? "?" : exceptions[frame->vector]);
   }
 

@@ -135,6 +135,6 @@ uintptr_t lmmu_get_cr3(void) {
 static void page_fault_handler(struct isr_frame* frame) {
   uintptr_t cr2;
   __asm__ __volatile__ ( "mov %%cr2, %0" : "=r" (cr2));
-  LOG("Page fault! code=%08x eip=%08lx addr=%08lx\n", frame->error_code, frame->eip, cr2);
-  print_call_stack(frame->eip, frame->ebp);
+  LOG("Page fault! code=%08x eip=%08lx addr=%08lx\n", frame->error_code, frame->user_eip, cr2);
+  print_call_stack(frame->user_eip, frame->ebp);
 }
