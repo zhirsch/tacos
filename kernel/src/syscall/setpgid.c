@@ -2,6 +2,7 @@
 
 #include "bits/types.h"
 
+#include "interrupts.h"
 #include "log.h"
 #include "process.h"
 
@@ -15,7 +16,7 @@
        an existing process group to be joined and the session ID of that group must match the session ID of the joining process.
 */
 
-int sys_setpgid(pid_t pid, pid_t pgid) {
+int sys_setpgid(pid_t pid, pid_t pgid, struct isr_frame* frame) {
   if (pid == 0) {
     pid = current_process->pid;
   }

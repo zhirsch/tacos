@@ -5,9 +5,10 @@
 #include "bits/errno.h"
 #include "bits/types.h"
 
+#include "interrupts.h"
 #include "process.h"
 
-pid_t sys_fork(void) {
+pid_t sys_fork(struct isr_frame* frame) {
   struct process* child = NULL;
   int c = process_fork(&child);
   if (c < 0) {

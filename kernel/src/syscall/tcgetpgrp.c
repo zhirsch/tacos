@@ -4,10 +4,11 @@
 
 #include "bits/errno.h"
 
+#include "interrupts.h"
 #include "process.h"
 #include "tty.h"
 
-pid_t sys_tcgetpgrp(int fd) {
+pid_t sys_tcgetpgrp(int fd, struct isr_frame* frame) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }

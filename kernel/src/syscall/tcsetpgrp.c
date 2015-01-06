@@ -5,10 +5,11 @@
 #include "bits/errno.h"
 #include "bits/types.h"
 
+#include "interrupts.h"
 #include "process.h"
 #include "tty.h"
 
-int sys_tcsetpgrp(int fd, pid_t pgrp) {
+int sys_tcsetpgrp(int fd, pid_t pgrp, struct isr_frame* frame) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }

@@ -77,8 +77,7 @@ def make_declarations(syscalls, f):
         if 'args' in syscall:
             for arg in syscall['args']:
                 args.append('%s %s' % (arg['type'], arg['name']))
-        else:
-            args.append('void')
+        args.append('struct isr_frame* frame')
         if 'type' in syscall:
             f.write(fmt % (syscall['type'], syscall['name'], ', '.join(args), ''))
         else:
@@ -110,10 +109,10 @@ def make_stubs(syscalls, f):
         else:
             f.write('  LOG("in:  (none)\\n");\n')
         if 'type' in syscall:
-            f.write('  frame->eax = (uint32_t)sys_%s(%s);\n' % (syscall['name'], ', '.join(args)))
+            f.write('  frame->eax = (uint32_t)sys_%s(%s);\n' % (syscall['name'], ', '.join(args + ['frame'])))
             f.write('  LOG("out: %s\\n", (%s)frame->eax);\n' % (format_string(syscall['type']), syscall['type']))
         else:
-            f.write('  sys_%s(%s);\n' % (syscall['name'], ', '.join(args)))
+            f.write('  sys_%s(%s);\n' % (syscall['name'], ', '.join(args + ['frame'])))
             f.write('  LOG("out: (none)\\n");\n')
         f.write('#undef LOG\n')
         f.write('}\n')

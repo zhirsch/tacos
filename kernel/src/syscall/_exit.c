@@ -5,6 +5,6 @@
 
 #define PANIC(...) panic("SYSCALL [_exit]", __VA_ARGS__)
 
-void sys__exit(int status) {
+void sys__exit(int status, struct isr_frame* frame) {
   PANIC("Process terminated with status %d\n", status);
 }

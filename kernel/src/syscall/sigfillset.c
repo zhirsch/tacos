@@ -3,7 +3,9 @@
 #include "bits/errno.h"
 #include "bits/signal.h"
 
-int sys_sigfillset(sigset_t* set) {
+#include "interrupts.h"
+
+int sys_sigfillset(sigset_t* set, struct isr_frame* frame) {
   if (set == NULL) {
     return -EFAULT;
   }

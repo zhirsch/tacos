@@ -6,12 +6,13 @@
 #include "bits/errno.h"
 #include "bits/fcntl.h"
 
+#include "interrupts.h"
 #include "process.h"
 
 static int dupfd(int oldfd, int newfd);
 static int setfd(int fd, int val);
 
-int sys_fcntl(int fd, int cmd, uint32_t arg) {
+int sys_fcntl(int fd, int cmd, uint32_t arg, struct isr_frame* frame) {
   if (fd < 0 || fd > NUM_FDS) {
     return -EBADF;
   }

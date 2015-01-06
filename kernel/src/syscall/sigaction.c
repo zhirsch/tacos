@@ -3,10 +3,11 @@
 #include "bits/errno.h"
 #include "bits/signal.h"
 
+#include "interrupts.h"
 #include "process.h"
 
 int sys_sigaction(int signum, const struct sigaction* act,
-                  struct sigaction* oldact) {
+                  struct sigaction* oldact, struct isr_frame* frame) {
   if (signum <= 0 || signum >= NSIG) {
     return -EINVAL;
   }

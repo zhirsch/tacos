@@ -2,6 +2,8 @@
 
 #include "process.h"
 
-uid_t sys_geteuid(void) {
+#include "interrupts.h"
+
+uid_t sys_geteuid(struct isr_frame* frame) {
   return current_process->euid;
 }

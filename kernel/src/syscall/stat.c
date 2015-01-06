@@ -4,10 +4,11 @@
 #include "bits/fcntl.h"
 #include "bits/stat.h"
 
+#include "interrupts.h"
 #include "file.h"
 #include "iso9660.h"
 
-int sys_stat(const char* path, struct stat* buf) {
+int sys_stat(const char* path, struct stat* buf, struct isr_frame* frame) {
   struct file* file = NULL;
   int err;
   if (buf == NULL) {

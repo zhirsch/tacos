@@ -6,6 +6,7 @@
 #include "bits/errno.h"
 #include "bits/fcntl.h"
 
+#include "interrupts.h"
 #include "log.h"
 #include "process.h"
 #include "screen.h"
@@ -13,7 +14,7 @@
 
 #define PANIC(...) panic("SYSCALL [WRITE]", __VA_ARGS__)
 
-ssize_t sys_write(int fd, const void* buf, size_t count) {
+ssize_t sys_write(int fd, const void* buf, size_t count, struct isr_frame* frame) {
   if (buf == NULL) {
     return -EFAULT;
   }

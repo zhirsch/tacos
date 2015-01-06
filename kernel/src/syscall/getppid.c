@@ -2,6 +2,8 @@
 
 #include "process.h"
 
-pid_t sys_getppid(void) {
+#include "interrupts.h"
+
+pid_t sys_getppid(struct isr_frame* frame) {
   return current_process->ppid;
 }
