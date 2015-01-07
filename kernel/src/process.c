@@ -37,6 +37,13 @@ int process_fork(struct process** childp, struct isr_frame* parent_frame) {
   child->pid = process_next_pid();
   child->ppid = current_process->pid;
 
+  // Set the child process's state.
+  child->state = PROCESS_ALIVE;
+
+  // Set the child process's wait state.
+  child->wait_state = PROCESS_WAIT_NONE;
+  child->status = 0;
+
   // The child process has no children.
   child->children = NULL;
 

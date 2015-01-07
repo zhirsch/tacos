@@ -8,8 +8,6 @@
 #define LOG(...) log("SBRK", __VA_ARGS__)
 #define PANIC(...) panic("SBRK", __VA_ARGS__)
 
-static void assert(int cond);
-
 void mmu_sbrk_grow(uintptr_t* cpb, uintptr_t increment) {
   uintptr_t extra = 0;
   const uint8_t flags = MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
@@ -92,10 +90,4 @@ void mmu_sbrk_shrink(uintptr_t* cpb, uintptr_t decrement) {
   }
 
   assert(decrement == 0);
-}
-
-static void assert(int cond) {
-  if (!cond) {
-    PANIC("assert failed\n");
-  }
 }

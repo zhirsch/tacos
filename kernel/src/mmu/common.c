@@ -7,6 +7,7 @@
 #include "string.h"
 
 #define LOG(...) log("MMU", __VA_ARGS__)
+#define PANIC(...) panic("MMU", __VA_ARGS__)
 
 void init_mmu(multiboot_info_t* mbi) {
   init_pmmu(mbi);
@@ -76,4 +77,8 @@ uintptr_t mmu_clone_address_space(void) {
     new[i] = mmu_clone_page_table(i) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
   }
   return lmmu_unmap_page(new);
+}
+
+void mmu_free_address_space(uintptr_t cr3) {
+  PANIC("mmu_free_address_space not implemented\n");
 }

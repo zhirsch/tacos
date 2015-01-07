@@ -32,6 +32,9 @@ void mmu_map_user_rw_page(void* laddr);
 // Makes a copy of the current address space.
 uintptr_t mmu_clone_address_space(void);
 
+// Frees all the pages in an address space.
+void mmu_free_address_space(uintptr_t cr3);
+
 // The size of each page.
 #define PAGESIZE 4096
 

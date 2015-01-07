@@ -143,22 +143,25 @@ static void start_init(const char* cmdline) {
 
   // Set the current process.
   current_process = kcalloc(1, sizeof(*current_process));
-  current_process->pid     = process_next_pid();
-  current_process->ppid    = 0;
-  current_process->pgid    = process_next_pgid();
-  current_process->uid     = 0;  // root
-  current_process->euid    = 0;  // root
-  current_process->gid     = 0;  // root
-  current_process->egid    = 0;  // root
-  current_process->tty     = tty_get(0);
-  current_process->cwd     = "/";
-  current_process->tss.cs  = SEGMENT_USER_CODE;
-  current_process->tss.ss  = SEGMENT_USER_DATA;
-  current_process->tss.ds  = SEGMENT_USER_DATA;
-  current_process->tss.es  = SEGMENT_USER_DATA;
-  current_process->tss.fs  = SEGMENT_USER_DATA;
-  current_process->tss.gs  = SEGMENT_USER_DATA;
-  current_process->tss.cr3 = (uintptr_t)lmmu_get_cr3();
+  current_process->pid        = process_next_pid();
+  current_process->ppid       = 0;
+  current_process->pgid       = process_next_pgid();
+  current_process->uid        = 0;  // root
+  current_process->euid       = 0;  // root
+  current_process->gid        = 0;  // root
+  current_process->egid       = 0;  // root
+  current_process->state      = PROCESS_ALIVE;
+  current_process->wait_state = PROCESS_WAIT_NONE;
+  current_process->status     = 0;
+  current_process->tty        = tty_get(0);
+  current_process->cwd        = "/";
+  current_process->tss.cs     = SEGMENT_USER_CODE;
+  current_process->tss.ss     = SEGMENT_USER_DATA;
+  current_process->tss.ds     = SEGMENT_USER_DATA;
+  current_process->tss.es     = SEGMENT_USER_DATA;
+  current_process->tss.fs     = SEGMENT_USER_DATA;
+  current_process->tss.gs     = SEGMENT_USER_DATA;
+  current_process->tss.cr3    = (uintptr_t)lmmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
 
   // stdin

@@ -55,6 +55,12 @@ void panic(const char* w, const char* format, ...) {
   while (1) { }
 }
 
+void assert(int cond) {
+  if (!cond) {
+    panic("???", "%s", "assert failed\n");
+  }
+}
+
 void print_call_stack(uint32_t eip, uint32_t ebp) {
   const uintptr_t* pebp = (uintptr_t*)ebp;
 

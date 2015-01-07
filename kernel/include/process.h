@@ -33,6 +33,23 @@ struct process {
   gid_t gid;
   gid_t egid;
 
+  // The scheduling state of the process.
+  enum {
+    PROCESS_ALIVE,
+    PROCESS_ZOMBIE,
+  } state;
+
+  // The state of the process for waitpid(2).
+  enum {
+    PROCESS_WAIT_NONE,
+    PROCESS_WAIT_EXITED,
+    PROCESS_WAIT_STOPPED,
+    PROCESS_WAIT_CONTINUED,
+  } wait_state;
+
+  // The status of the process.  See waitpid(2).
+  int status;
+
   // The controlling tty for the process.
   struct tty* tty;
 
