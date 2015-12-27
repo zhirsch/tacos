@@ -98,6 +98,7 @@ pid_t process_next_pgid(void);
 
 int process_fork(struct process** child, struct isr_frame* parent_frame);
 
-void switch_to_ring3(uint16_t cs, uint32_t eip, uint16_t ss, uint32_t esp, uint32_t eflags) __attribute__ ((noreturn));
+// Starts the process by switching to ring3 at the eip configured in the tss.
+void process_start(struct tss* tss) __attribute__ ((noreturn));
 
 #endif /* PROCESS_H */

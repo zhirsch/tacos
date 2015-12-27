@@ -6,7 +6,7 @@ objects = env.Object([
     'idt.S',
     'isr.S',
     'pagedir.S',
-    'ring3.S',
+    'process.S',
     'stack.S',
 ])
 

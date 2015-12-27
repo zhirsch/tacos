@@ -98,13 +98,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
   end += PAGESIZE;
 
   // Switch to the new process in ring 3.
-  {
-    switch_to_ring3(current_process->tss.cs,
-                    current_process->tss.eip,
-                    current_process->tss.ss,
-                    current_process->tss.esp,
-                    current_process->tss.eflags);
-  }
+  process_start(&current_process->tss);
 }
 
 static bool check_elf_header(const struct Elf32_Ehdr* ehdr) {

@@ -70,7 +70,7 @@ int process_fork(struct process** childp, struct isr_frame* parent_frame) {
   child->tss.esp0 = (uintptr_t)kmalloc(0x4000) + 0x4000;
 
   // Return directly to user space when the child process is scheduled.
-  child->tss.eip = (uintptr_t)switch_to_ring3;
+  child->tss.eip = (uintptr_t)process_start;
   {
     uint32_t* new_stack = (uint32_t*)child->tss.esp0;
     *(--new_stack) = parent_frame->user_eflags;
