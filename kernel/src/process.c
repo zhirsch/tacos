@@ -111,7 +111,9 @@ int process_fork(struct process** childp, struct isr_frame* parent_frame) {
     current_process->children = node;
   }
 
-  // TODO: Add the child to the scheduler.
+  // Add the child to the list of processes.
+  child->next = current_process->next;
+  current_process->next = child;
 
   return 0;
 }

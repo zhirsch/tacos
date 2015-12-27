@@ -88,6 +88,9 @@ struct process {
     struct process* child;
     struct child* next;
   }* children;
+
+  // The next process in the system.
+  struct process* next;
 };
 
 // The current running process.

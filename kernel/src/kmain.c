@@ -164,6 +164,9 @@ static void start_init(const char* cmdline) {
   current_process->tss.cr3    = (uintptr_t)lmmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
 
+  // Since this is the first process, link it to itself.
+  current_process->next = current_process;
+
   // stdin
   current_process->fds[FD_STDIN].type = PROCESS_FD_TTY;
   current_process->fds[FD_STDIN].u.tty = tty_get(0);
