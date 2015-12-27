@@ -6,6 +6,7 @@
 #include "bits/types.h"
 
 #include "interrupts.h"
+#include "log.h"
 #include "process.h"
 
 pid_t sys_fork(struct isr_frame* frame) {
@@ -15,10 +16,7 @@ pid_t sys_fork(struct isr_frame* frame) {
     // Error.
     return c;
   }
-  if (current_process == child) {
-    // In the child.
-    return 0;
-  }
-  // In the parent.
+  // Always in the parent.  The child returns through a different path.
+  assert(current_process != child);
   return child->pid;
 }

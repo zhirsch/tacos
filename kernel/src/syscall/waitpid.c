@@ -9,6 +9,7 @@
 #include "mmu/common.h"
 #include "mmu/heap.h"
 #include "process.h"
+#include "scheduler.h"
 
 #define LOG(...) log("SYSCALL [waitpid]", __VA_ARGS__)
 #define PANIC(...) panic("SYSCALL [waitpid]", __VA_ARGS__)
@@ -115,7 +116,7 @@ static pid_t wait_for_child_in_pgid(pid_t pgid, int* status, int options) {
     if (options & WNOHANG) {
       return 0;
     }
-    PANIC("need to yield\n");
+    scheduler_yield();
   }
 }
 
@@ -133,7 +134,7 @@ static pid_t wait_for_any_child(int* status, int options) {
     if (options & WNOHANG) {
       return 0;
     }
-    PANIC("need to yield\n");
+    scheduler_yield();
   }
 }
 
@@ -156,6 +157,6 @@ static pid_t wait_for_child(pid_t pid, int* status, int options) {
     if (options & WNOHANG) {
       return 0;
     }
-    PANIC("need to yield\n");
+    scheduler_yield();
   }
 }

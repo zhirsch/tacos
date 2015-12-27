@@ -64,6 +64,7 @@ objects += env.Object([
     'log.c',
     'pic.c',
     'process.c',
+    'scheduler.c',
     'screen.c',
     'snprintf.c',
     'string.c',

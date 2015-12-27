@@ -10,6 +10,7 @@
 #include "log.h"
 #include "mmu/common.h"
 #include "mmu/heap.h"
+#include "scheduler.h"
 #include "string.h"
 
 #define LOG(...) log("PROCESS", __VA_ARGS__)
@@ -49,36 +50,64 @@ int process_fork(struct process** childp, struct isr_frame* parent_frame) {
 
   // Set the tss.
   memset(&child->tss, 0, sizeof(child->tss));
-  child->tss.eflags = 0;
-  child->tss.eax = 0;
-  child->tss.ecx = 0;
-  child->tss.edx = 0;
-  child->tss.ebx = 0;
-  child->tss.ebp = 0;
-  child->tss.esi = 0;
-  child->tss.edi = 0;
-  child->tss.cs = SEGMENT_KERNEL_CODE;
-  child->tss.ss = SEGMENT_KERNEL_DATA;
-  child->tss.ds = SEGMENT_KERNEL_DATA;
-  child->tss.es = SEGMENT_KERNEL_DATA;
-  child->tss.fs = SEGMENT_KERNEL_DATA;
-  child->tss.gs = SEGMENT_KERNEL_DATA;
+  child->tss.eip = parent_frame->user_eip;
+  child->tss.eflags = parent_frame->user_eflags;
+  child->tss.eax = parent_frame->eax;
+  child->tss.ecx = parent_frame->ecx;
+  child->tss.edx = parent_frame->edx;
+  child->tss.ebx = parent_frame->ebx;
+  child->tss.esp = parent_frame->user_esp;
+  child->tss.ebp = parent_frame->ebp;
+  child->tss.esi = parent_frame->esi;
+  child->tss.edi = parent_frame->edi;
+  child->tss.cs = parent_frame->user_cs;
+  child->tss.ss = parent_frame->user_ss;
+  child->tss.ds = parent_frame->user_ss;
+  child->tss.es = parent_frame->user_ss;
+  child->tss.fs = parent_frame->user_ss;
+  child->tss.gs = parent_frame->user_ss;
 
-  // Create the kernel stack for the child process.
-  // TODO: Align on page boundary.
-  child->tss.ss0 = SEGMENT_KERNEL_DATA;
-  child->tss.esp0 = (uintptr_t)kmalloc(0x4000) + 0x4000;
-
-  // Return directly to user space when the child process is scheduled.
-  child->tss.eip = (uintptr_t)process_start;
+  // The child process starts when the scheduler decides to run it.  When that
+  // happens, process_switch is called with it's tss, so the child process's tss
+  // and kernel stack (esp0) must look like process_switch had previously
+  // switched away from it:
+  //
+  //   return address
+  //   caller's esp
+  //   pusha
+  //   pointer to process struct
+  //
+  // The pusha and caller's esp don't matter because there's neither a caller
+  // nor previous state for this child process.  The return address is
+  // process_start, because the child process is being run for the first time.
+  //
+  // Below the emulated stack for process_switch, the stack is set up for a
+  // "call" to process_start.  The stack looks like:
+  //
+  //   child's tss (arg1)
+  //   return address
+  //
+  // Since process_start never returns, the return address is unimportant.
   {
-    uint32_t* new_stack = (uint32_t*)child->tss.esp0;
-    *(--new_stack) = parent_frame->user_eflags;
-    *(--new_stack) = parent_frame->user_esp;
-    *(--new_stack) = parent_frame->user_ss;
-    *(--new_stack) = parent_frame->user_eip;
-    *(--new_stack) = parent_frame->user_cs;
-    child->tss.esp = (uintptr_t)new_stack;
+    // Create the kernel stack for the child process.
+    // TODO: Align on page boundary.
+    uint32_t* esp0 = (uint32_t*)kmalloc(0x4000) + 0x4000 / sizeof(uint32_t);
+
+    // process_start's stack
+    *(--esp0) = (uintptr_t)&child->tss;    // arg1
+    *(--esp0) = 0;                         // ret addr
+
+    // process_switch's stack
+    *(--esp0) = (uintptr_t)process_start;  // ret addr
+    *(--esp0) = 0;                         // caller's ebp
+    for (int i = 0; i < 8; i++) {          // pusha
+      *(--esp0) = 0;
+    }
+    *(--esp0) = (uintptr_t)child;          // pointer to child process
+
+    // Set esp0 in the tss.
+    child->tss.ss0 = SEGMENT_KERNEL_DATA;
+    child->tss.esp0 = (uintptr_t)esp0;
   }
 
   // Create a copy of the current address space.

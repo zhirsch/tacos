@@ -56,3 +56,41 @@ process_start:
         mov   $0, %eax
 
         iret
+
+
+        .text
+        .global process_switch
+        // void process_switch(struct tss* old_tss, struct tss* new_tss)
+process_switch:
+        push    %ebp
+        mov     %esp, %ebp
+
+        // arg1 = old_tss
+        mov     0x8(%ebp), %eax
+        // arg2 = new_tss
+        mov     0xc(%ebp), %edx
+
+        // Save the old process's registers.  Segment registers don't need to be
+	// saved since this will always be called from and return to the kernel.
+        pusha
+
+        // Save the pointer to the current process.
+        push    current_process
+
+        // Save the old esp0 and restore the new esp0.
+        mov     %esp, ESP0(%eax)
+        mov     ESP0(%edx), %esp
+
+        // Switch to the new page directory.
+        mov     CR3(%edx), %eax
+        mov     %eax, %cr3
+
+        // Restore the current process pointer.
+        pop     current_process
+
+        // Restore the new process's registers.
+        popa
+
+        // Return to the new process.
+        add     $0x4, %esp
+        ret

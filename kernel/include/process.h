@@ -104,4 +104,8 @@ int process_fork(struct process** child, struct isr_frame* parent_frame);
 // Starts the process by switching to ring3 at the eip configured in the tss.
 void process_start(struct tss* tss) __attribute__ ((noreturn));
 
+// Switches to a new process.  When this returns, the new process will be
+// running in kernel mode.
+void process_switch(struct tss* old_tss, struct tss* new_tss);
+
 #endif /* PROCESS_H */
