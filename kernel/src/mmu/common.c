@@ -80,5 +80,5 @@ uintptr_t mmu_clone_address_space(void) {
 }
 
 void mmu_free_address_space(uintptr_t cr3) {
-  PANIC("mmu_free_address_space not implemented\n");
+  LOG("mmu_free_address_space not implemented\n");
 }
