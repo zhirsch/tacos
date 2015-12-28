@@ -1,5 +1,6 @@
 #include "syscalls/syscalls.h"
 
+#include "bits/errno.h"
 #include "bits/types.h"
 
 #include "interrupts.h"
@@ -9,11 +10,15 @@
 #define PANIC(...) panic("SYSCALL [setpgid]", __VA_ARGS__)
 
 /*
-       setpgid()  sets  the  PGID  of  the  process specified by pid to pgid.  If pid is zero, then the process ID of the calling
-       process is used.  If pgid is zero, then the PGID of the process specified by pid is made the same as its process  ID.   If
-       setpgid() is used to move a process from one process group to another (as is done by some shells when creating pipelines),
-       both process groups must be part of the same session (see setsid(2) and credentials(7)).  In this case, the pgid specifies
-       an existing process group to be joined and the session ID of that group must match the session ID of the joining process.
+       setpgid() sets the PGID of the process specified by pid to pgid.  If pid
+       is zero, then the process ID of the calling process is used.  If pgid is
+       zero, then the PGID of the process specified by pid is made the same as
+       its process ID.  If setpgid() is used to move a process from one process
+       group to another (as is done by some shells when creating pipelines),
+       both process groups must be part of the same session (see setsid(2) and
+       credentials(7)).  In this case, the pgid specifies an existing process
+       group to be joined and the session ID of that group must match the
+       session ID of the joining process.
 */
 
 int sys_setpgid(pid_t pid, pid_t pgid, struct isr_frame* frame) {
@@ -33,6 +38,16 @@ int sys_setpgid(pid_t pid, pid_t pgid, struct isr_frame* frame) {
 #endif
 
   // Create a new process group.
-  current_process->pgid = pgid;
-  return 0;
+  {
+    struct process* proc = current_process;
+    do {
+      if (proc->pid == pid) {
+        proc->pgid = pgid;
+        return 0;
+      }
+      proc = proc->next;
+    } while (proc != current_process);
+  }
+
+  return -ESRCH;
 }
