@@ -195,6 +195,7 @@ static void start_init(const char* cmdline) {
     };
     char* const envp[] = {
       "OS=TacOS",
+      "AUTHOR=zhirsch",
       NULL,
     };
     elf_exec(elf, argv, envp);
