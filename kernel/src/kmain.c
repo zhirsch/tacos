@@ -81,8 +81,8 @@ static void announce(void) {
   }
 }
 
-static const char* get_init_path(const char* cmdline) {
-  const char* initpath = NULL;
+static char* get_init_path(const char* cmdline) {
+  char* initpath = NULL;
   // Parse the command line to find the name of the init program.
   // TODO(zhirsch): Allow for init= to be anywhere in the command line, not just
   // at the end.
@@ -95,7 +95,7 @@ static const char* get_init_path(const char* cmdline) {
 }
 
 static void start_init(const char* cmdline) {
-  const char* initpath = NULL;
+  char* initpath = NULL;
   struct file* file = NULL;
   int c;
   struct stat st;
@@ -188,12 +188,12 @@ static void start_init(const char* cmdline) {
 
   // Execute the init program.
   {
-    const char* argv[] = {
+    char* const argv[] = {
       initpath,
       "-i",
       NULL,
     };
-    const char* envp[] = {
+    char* const envp[] = {
       "OS=TacOS",
       NULL,
     };

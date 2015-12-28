@@ -17,10 +17,11 @@
 static bool check_elf_header(const struct Elf32_Ehdr* ehdr);
 static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end);
 
-void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) {
+void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   uintptr_t end = 0;
 
   // Reset the address space to prepare for the new process.
+  // TODO: Free the exiting pages.
   lmmu_reset_cr3();
 
   // Parse the elf header.

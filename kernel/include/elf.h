@@ -57,6 +57,6 @@ struct Elf32_Phdr {
 
 // Replaces the current process with the one described by the ELF header.  Takes
 // ownership of ehdr.
-void elf_exec(struct Elf32_Ehdr* ehdr, const char* argv[], const char* envp[]) __attribute__ ((noreturn));
+void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) __attribute__ ((noreturn));
 
 #endif /* ELF_H */
