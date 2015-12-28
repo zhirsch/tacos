@@ -36,14 +36,13 @@ char* strcpy(char* dest, const char* src) {
   while (*src != '\0') {
     *(dest++) = *(src++);
   }
+  *dest = '\0';
   return t;
 }
 
 char* strdup(const char* s) {
   char* t = kmalloc(strlen(s) + 1);
-  strcpy(t, s);
-  t[strlen(s)] = '\0';
-  return t;
+  return strcpy(t, s);
 }
 
 int strcmp(const char* s1, const char* s2) {

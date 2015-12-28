@@ -16,6 +16,7 @@
 
 static bool check_elf_header(const struct Elf32_Ehdr* ehdr);
 static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end);
+static int make_envp_argv(char* out[], char* const in[]);
 
 void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   uintptr_t end = 0;
@@ -42,43 +43,14 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   mmu_map_user_rw_page((void*)end);
   LOG("envp is at %08lx\n", end);
   current_process->envp = (char**)end;
-  {
-    int i;
-    char* envs = (char*)end;
-    current_process->envp = (char**)envs;
-    for (i = 0; envp[i] != NULL; i++) {
-      envs += sizeof(char**);
-    }
-    envs += sizeof(char**);
-    for (i = 0; envp[i] != NULL; i++) {
-      strcpy(envs, envp[i]);
-      current_process->envp[i] = envs;
-      envs += strlen(envp[i]) + 1;
-    }
-    current_process->envp[i] = NULL;
-  }
+  (void)make_envp_argv(current_process->envp, envp);
   end += PAGESIZE;
 
   // Copy argv into the address space.
   mmu_map_user_rw_page((void*)end);
   LOG("argv is at %08lx\n", end);
   current_process->argv = (char**)end;
-  {
-    int i;
-    char* args = (char*)end;
-    current_process->argv = (char**)args;
-    for (i = 0; argv[i] != NULL; i++) {
-      args += sizeof(char**);
-    }
-    args += sizeof(char**);
-    for (i = 0; argv[i] != NULL; i++) {
-      strcpy(args, argv[i]);
-      current_process->argv[i] = args;
-      args += strlen(argv[i]) + 1;
-    }
-    current_process->argv[i] = NULL;
-    current_process->argc = i;
-  }
+  current_process->argc = make_envp_argv(current_process->argv, argv);
   end += PAGESIZE;
 
   // Create the stack for the new process.
@@ -178,4 +150,23 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
   }
   *end = mmu_round_to_next_page(*end);
   return true;
+}
+
+static int make_envp_argv(char* out[], char* const in[]) {
+  int i;
+  char* ptr = (char*)out;
+
+  // Count the number of entries to copy.
+  for (i = 0; in[i] != NULL; i++) {
+    ptr += sizeof(*out);
+  }
+  ptr += sizeof(*out);
+
+  // Write the pointers to the strings.
+  for (i = 0; in[i] != NULL; i++) {
+    out[i] = strcpy(ptr, in[i]);
+    ptr += strlen(in[i]) + 2;
+  }
+  out[i] = NULL;
+  return i;
 }
