@@ -1,6 +1,8 @@
 #ifndef TSS_H
 #define TSS_H
 
+#include "mmu/common.h"
+
 struct tss {
   unsigned int prev_task_link : 16;  // 0x00
   unsigned int reserved0      : 16;
@@ -42,5 +44,7 @@ struct tss {
   unsigned int reserved11     : 15;
   unsigned int io_map_base    : 16;  // 0x66
 }  __attribute__ ((packed));
+
+extern struct tss g_tss __attribute__ ((aligned(PAGESIZE)));
 
 #endif /* TSS_H */

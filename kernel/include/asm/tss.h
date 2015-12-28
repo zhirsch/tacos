@@ -2,6 +2,7 @@
 #define ASM_TSS_H
 
 #define ESP0 0x04
+#define SS0  0x08
 
 #define DS  0x54
 #define ES  0x48

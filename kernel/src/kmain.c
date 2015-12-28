@@ -33,6 +33,8 @@ static void init_tss(void);
 static void announce(void);
 static void start_init(const char* cmdline) __attribute__ ((noreturn));
 
+extern const void kernel_stack_start;
+
 static char cmdline[256];
 
 // kmain is the main entry point to the kernel after boot.S executes.
@@ -161,6 +163,8 @@ static void start_init(const char* cmdline) {
   current_process->tss.es     = SEGMENT_USER_DATA;
   current_process->tss.fs     = SEGMENT_USER_DATA;
   current_process->tss.gs     = SEGMENT_USER_DATA;
+  current_process->tss.ss0    = SEGMENT_KERNEL_DATA;
+  current_process->tss.esp0   = (uintptr_t)&kernel_stack_start;
   current_process->tss.cr3    = (uintptr_t)lmmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
 
@@ -197,26 +201,19 @@ static void start_init(const char* cmdline) {
   }
 }
 
-extern const void kernel_stack_start;
-
 static void init_tss(void) {
-  static struct tss tss __attribute__ ((aligned(PAGESIZE)));
-
-  gdt[5].limit_lo    = (((uintptr_t)(sizeof(tss))) & 0x0000FFFF);
-  gdt[5].base_lo     = (((uintptr_t)(&tss)) & 0x00FFFFFF);
+  gdt[5].limit_lo    = (((uintptr_t)(sizeof(g_tss))) & 0x0000FFFF);
+  gdt[5].base_lo     = (((uintptr_t)(&g_tss)) & 0x00FFFFFF);
   gdt[5].type        = 9;
   gdt[5].reserved1   = 0;
   gdt[5].dpl         = 0;
   gdt[5].present     = 1;
-  gdt[5].limit_hi    = (((uintptr_t)(sizeof(tss))) & 0xFFFF0000) >> 16;
+  gdt[5].limit_hi    = (((uintptr_t)(sizeof(g_tss))) & 0xFFFF0000) >> 16;
   gdt[5].available   = 0;
   gdt[5].reserved2   = 0;
   gdt[5].granularity = 0;
-  gdt[5].base_hi     = (((uintptr_t)(&tss)) & 0xFF000000) >> 24;
+  gdt[5].base_hi     = (((uintptr_t)(&g_tss)) & 0xFF000000) >> 24;
 
-  memset(&tss, 0, sizeof(tss));
-  tss.ss0  = SEGMENT_KERNEL_DATA;
-  tss.esp0 = (uintptr_t)&kernel_stack_start;
-
+  memset(&g_tss, 0, sizeof(g_tss));
   __asm__ __volatile__ ("mov $0x28, %%ax; ltr %%ax" : : : "ax");
 }

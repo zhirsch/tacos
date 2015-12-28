@@ -20,6 +20,13 @@ process_start:
         mov   GS(%edx), %ax
         mov   %ax, %gs
 
+        // Set ss0 and esp0 for the process so that the appropriate kernel stack
+        // will be used when the process is interrupted.
+        mov   ESP0(%edx), %eax
+        mov   %eax, (ESP0 + g_tss)
+        mov   SS0(%edx), %ax
+        mov   %ax, (SS0 + g_tss)
+
         // Set up the stack so that iret will jump to the user code in ring 3.
         // The stack needs to look like:
         //
@@ -54,7 +61,6 @@ process_start:
 
         // Set eax to 0 for the return value from fork.
         mov   $0, %eax
-
         iret
 
 
@@ -70,11 +76,8 @@ process_switch:
         // arg2 = new_tss
         mov     0xc(%ebp), %edx
 
-        // Save the old process's registers.  Segment registers don't need to be
-	// saved since this will always be called from and return to the kernel.
+        // Save the old process's state.
         pusha
-
-        // Save the pointer to the current process.
         push    current_process
 
         // Save the old esp0 and restore the new esp0.
@@ -85,12 +88,17 @@ process_switch:
         mov     CR3(%edx), %eax
         mov     %eax, %cr3
 
-        // Restore the current process pointer.
-        pop     current_process
+        // Set ss0 and esp0 for the new process so that the appropriate kernel
+        // stack will be used when the process is interrupted.
+        mov     ESP0(%edx), %eax
+        mov     %eax, (ESP0 + g_tss)
+        mov     SS0(%edx), %ax
+        mov     %ax, (SS0 + g_tss)
 
-        // Restore the new process's registers.
+        // Restore the new process's state.
+        pop     current_process
         popa
 
         // Return to the new process.
-        add     $0x4, %esp
+        pop     %ebp
         ret
