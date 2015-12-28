@@ -16,7 +16,7 @@ void sys__exit(int status, struct isr_frame* frame) {
 
   // Allow waitpid to work for this process.
   current_process->wait_state = PROCESS_WAIT_EXITED;
-  current_process->status = status;
+  current_process->status = (status << 8);
 
   // Yield to something else, this process is dead.
   scheduler_yield();
