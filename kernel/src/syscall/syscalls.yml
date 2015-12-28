@@ -165,3 +165,13 @@
   args:
     - name: mask
       type: const sigset_t*
+
+- name: execve
+  type: int
+  args:
+    - name: filename
+      type: const char*
+    - name: argv
+      type: char* const*
+    - name: envp
+      type: char* const*

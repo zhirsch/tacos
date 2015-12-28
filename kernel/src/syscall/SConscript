@@ -3,8 +3,9 @@ Import('env')
 
 # Compile the sources.
 objects = env.Object([
-    'close.c',
     '_exit.c',
+    'close.c',
+    'execve.c',
     'fcntl.c',
     'fork.c',
     'getcwd.c',
@@ -15,8 +16,8 @@ objects = env.Object([
     'getpid.c',
     'getppid.c',
     'getuid.c',
-    'isatty.c',
     'init.c',
+    'isatty.c',
     'open.c',
     'read.c',
     'sbrk.c',
