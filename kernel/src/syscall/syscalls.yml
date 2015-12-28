@@ -175,3 +175,11 @@
       type: char* const*
     - name: envp
       type: char* const*
+
+- name: fstat
+  type: int
+  args:
+    - name: fd
+      type: int
+    - name: buf
+      type: struct stat*
