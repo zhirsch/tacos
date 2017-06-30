@@ -5,7 +5,7 @@
 
 typedef long int             blkcnt_t;
 typedef long int             blksize_t;
-typedef long int             clock_t;
+typedef unsigned long int    clock_t;
 typedef int                  clockid_t;
 typedef unsigned long long   dev_t;
 typedef unsigned long int    fsblkcnt_t;
@@ -25,6 +25,11 @@ typedef unsigned int         uid_t;
 typedef unsigned int         useconds_t;
 
 typedef int                  ssize_t;
+
+typedef unsigned char u_char;
+typedef unsigned short u_short;
+typedef unsigned int u_int;
+typedef unsigned long u_long;
 
 /* These are defined in stddef.h:
 typedef size_t;

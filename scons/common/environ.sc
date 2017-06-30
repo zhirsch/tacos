@@ -1,5 +1,6 @@
 # -*- mode: python -*-
 # Common definitions for all SConstruct files
+import os
 import SCons
 
 Import('opts')
@@ -17,7 +18,8 @@ env.Append(CFLAGS=['-Wall',
 mkisofs_builder = Builder(action=Action('$MKISOFSCOM', '$MKISOFSCOMSTR'),
                           source_factory=env.fs.Dir)
 env.Append(BUILDERS={'MkIsoFs': mkisofs_builder})
-env['MKISOFSCOM'] = 'mkisofs $MKISOFSFLAGS -o $TARGET $SOURCE'
+env['MKISOFS'] = ARGUMENTS.get('MKISOFS', 'mkisofs')
+env['MKISOFSCOM'] = '$MKISOFS $MKISOFSFLAGS -o $TARGET $SOURCE'
 env['MKISOFSCOMSTR'] = '$MKISOFSCOM'
 
 # Create a builder for sed

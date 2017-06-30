@@ -36,6 +36,8 @@
 #define	EDOM		33	/* Math argument out of domain of func */
 #define	ERANGE		34	/* Math result not representable */
 #define	ENOSYS		38	/* Function not implemented */
+#define	EOVERFLOW	75	/* Value too large for defined data type */
+#define	EFTYPE		79	/* Inappropriate file type or format */
 #define	EILSEQ		84      /* Illegal byte sequence */
 
 #define	EWOULDBLOCK	EAGAIN  /* Operation would block */

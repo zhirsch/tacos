@@ -5,6 +5,8 @@
 #define O_WRONLY 1
 #define O_RDWR   2
 
+#define O_ACCMODE (O_RDONLY|O_WRONLY|O_RDWR)
+
 #define O_CREAT    00000100
 #define O_EXCL     00000200
 #define O_TRUNC    00001000

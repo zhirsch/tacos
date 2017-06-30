@@ -38,6 +38,7 @@ syscalls = env.Command(
     ['syscalls.c', '#bld/$T/kernel/include/syscalls/syscalls.h'],
     ['mksyscalls.py', 'syscalls.yml'],
     Action('$MKSYSCALLSCOM', '$MKSYSCALLSCOMSTR'),
+    ENV={'PYTHONPATH': ARGUMENTS.get('PYTHONPATH')},
 )
 env['MKSYSCALLSCOM'] = 'python ${SOURCES[0]} -i ${SOURCES[1]} -s ${TARGETS[0]} -h ${TARGETS[1]}'
 if not env['V']:
