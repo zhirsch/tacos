@@ -2,12 +2,16 @@
 
 set -ex
 
+realpath() {
+    [[ $1 = /* ]] && echo $1 || echo "$PWD/${1#./}"
+}
+
 BINUTILS_VERSION=2.24
 GCC_VERSION=4.9.1
 NEWLIB_VERSION=2.1.0
 DASH_VERSION=0.5.7
 
-ROOT=$(readlink -f $(dirname $0))
+ROOT=$(realpath $(dirname $0))
 SOURCE=$ROOT/source
 BUILD=$ROOT/build
 PREFIX=$ROOT/install
@@ -29,7 +33,8 @@ pushd binutils-kernel
 $SOURCE/binutils-$BINUTILS_VERSION/configure \
     --target=$KERNEL_TARGET \
     --prefix=$PREFIX \
-    --disable-nls
+    --disable-nls \
+    --disable-werror
 make -j4
 make install-strip
 popd
@@ -40,7 +45,8 @@ $SOURCE/gcc-$GCC_VERSION/configure \
     --target=$KERNEL_TARGET \
     --prefix=$PREFIX \
     --disable-nls \
-    --enable-languages=c
+    --enable-languages=c \
+    --with-gmp=$HOME/Documents/homebrew
 make -j4 all-gcc all-target-libgcc
 make install-strip-gcc install-strip-target-libgcc
 popd
@@ -52,7 +58,8 @@ pushd binutils
 $SOURCE/binutils-$BINUTILS_VERSION/configure \
     --target=$TARGET \
     --prefix=$PREFIX \
-    --disable-nls
+    --disable-nls \
+    --disable-werror
 make -j4
 make install-strip
 popd
@@ -65,7 +72,8 @@ $SOURCE/gcc-$GCC_VERSION/configure \
     --disable-nls \
     --without-headers \
     --with-newlib \
-    --enable-languages=c
+    --enable-languages=c \
+    --with-gmp=$HOME/Documents/homebrew
 make -j4 all-gcc all-target-libgcc
 make install-strip-gcc install-strip-target-libgcc
 popd
@@ -87,7 +95,8 @@ $SOURCE/gcc-$GCC_VERSION/configure \
     --prefix=$PREFIX \
     --disable-nls \
     --with-newlib \
-    --enable-languages=c
+    --enable-languages=c \
+    --with-gmp=$HOME/Documents/homebrew
 make -j4
 make install-strip
 popd
