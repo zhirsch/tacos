@@ -2,3 +2,4 @@ bld
 .sconsign.dblite
 *~
 bochs.log
+.DS_Store
