@@ -16,7 +16,7 @@ void init_mmu(multiboot_info_t* mbi);
 
 // Maps a linear address (which must be page aligned) to a physical page with
 // the given flags.
-void mmu_map_page(void* laddr, uint8_t flags);
+uintptr_t mmu_map_page(void* laddr, uint8_t flags);
 
 // Unmaps a linear address.  If the underlying page is no longer used, frees it.
 void mmu_unmap_page(void* laddr);
@@ -26,7 +26,7 @@ void mmu_unmap_page(void* laddr);
 void mmu_set_page_flags(void* laddr, uint8_t flags);
 
 // Convinience functions for calling mmu_map_page with the right flags.
-void mmu_map_system_rw_page(void* laddr);
+uintptr_t mmu_map_system_rw_page(void* laddr);
 void mmu_map_user_rw_page(void* laddr);
 
 // Makes a copy of the current address space.

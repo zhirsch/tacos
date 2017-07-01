@@ -84,6 +84,7 @@ void init_lmmu() {
 
 void lmmu_map_page(uintptr_t paddr, void* laddr, uint8_t flags) {
   if (!(get_page_directory_entry(laddr) & MMU_PAGE_PRESENT)) {
+    LOG("Mapping new page table page for %p\n", laddr);
     set_page_directory_entry(laddr, pmmu_get_page() | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER);
   }
   set_page_table_entry(laddr, paddr | (flags & 0xFFF));
@@ -95,7 +96,6 @@ uintptr_t lmmu_unmap_page(void* laddr) {
     PANIC("mmu_unmap_page(%p) is unmapped: %08lx\n", laddr, pte);
   }
   set_page_table_entry(laddr, 0);
-  // TODO(zhirsch): Free the page containing the PTEs if they're all unmapped?
   return (pte & 0xFFFFF000);
 }
 
@@ -108,20 +108,33 @@ void lmmu_set_page_flags(void* addr, uint8_t flags) {
 }
 
 void lmmu_reset_cr3(void) {
-  for (uintptr_t i = 0; i < 1024; i++) {
-    const uintptr_t addr_hi = i << 22;
-    if (i == 0) {
-      for (uintptr_t j = 0; j < 1024; j++) {
-        const uintptr_t addr = addr_hi | (j << 12);
-        if (addr == 0x000B8000) {
-          continue;
-        }
-        set_page_table_entry((void*)addr, 0);
-      }
+  for (int i = 0; i < 1024; i++) {
+    const uintptr_t addr_hi = (i << 22);
+    const uintptr_t pde = get_page_directory_entry((void*)addr_hi);
+    if (!(pde & MMU_PAGE_PRESENT)) {
+      // Skip non-present page directory entries.
       continue;
     }
-    if (addr_hi < 0xC0000000) {
-      set_page_directory_entry((void*)addr_hi, 0);
+    if (!(pde & MMU_PAGE_USER)) {
+      // Don't unmap kernel page directory entries.
+      continue;
+    }
+    for (int j = 0; j < 1024; j++) {
+      const uintptr_t addr = addr_hi | (j << 12);
+      const uintptr_t pte = get_page_table_entry((void*)addr);
+      if (!(pte & MMU_PAGE_PRESENT)) {
+        // Skip non-present page table entries.
+        continue;
+      }
+      if (addr == 0x000B8000) {
+        // Don't unmap the direct access to VGA memory.
+        continue;
+      }
+      if (!(pte & MMU_PAGE_USER)) {
+        // Don't unmap kernel page table entries.
+        continue;
+      }
+      pmmu_put_page(lmmu_unmap_page((void*)addr));
     }
   }
 }

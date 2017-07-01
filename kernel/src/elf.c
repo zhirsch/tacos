@@ -20,6 +20,32 @@ static int make_envp_argv(char* out[], char* const in[]);
 
 void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   uintptr_t end = 0;
+  char** kernel_argv = NULL;
+  int argc;
+  char** kernel_envp = NULL;
+  int envc;
+
+  // Copy the argv and envp arrays into the kernel so that the user's
+  // address space can be safely wiped.
+  argc = 0;
+  while (argv[argc] != NULL) {
+    argc++;
+  }
+  kernel_argv = kmalloc(sizeof(char*) * (argc + 1));
+  for (int i = 0; i < argc; i++) {
+    kernel_argv[i] = strdup(argv[i]);
+  }
+  kernel_argv[argc] = NULL;
+
+  envc = 0;
+  while (envp[envc] != NULL) {
+    envc++;
+  }
+  kernel_envp = kmalloc(sizeof(char*) * (envc + 1));
+  for (int i = 0; i < envc; i++) {
+    kernel_envp[i] = strdup(envp[i]);
+  }
+  kernel_envp[envc] = NULL;
 
   // Reset the address space to prepare for the new process.
   // TODO: Free the exiting pages.
@@ -43,14 +69,16 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   mmu_map_user_rw_page((void*)end);
   LOG("envp is at %08lx\n", end);
   current_process->envp = (char**)end;
-  (void)make_envp_argv(current_process->envp, envp);
+  (void)make_envp_argv(current_process->envp, kernel_envp);
+  kfree(kernel_envp);
   end += PAGESIZE;
 
   // Copy argv into the address space.
   mmu_map_user_rw_page((void*)end);
   LOG("argv is at %08lx\n", end);
   current_process->argv = (char**)end;
-  current_process->argc = make_envp_argv(current_process->argv, argv);
+  current_process->argc = make_envp_argv(current_process->argv, kernel_argv);
+  kfree(kernel_argv);
   end += PAGESIZE;
 
   // Create the stack for the new process.

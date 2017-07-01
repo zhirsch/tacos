@@ -14,8 +14,10 @@ void init_mmu(multiboot_info_t* mbi) {
   init_lmmu();
 }
 
-void mmu_map_page(void* laddr, uint8_t flags) {
-  lmmu_map_page(pmmu_get_page(), laddr, flags);
+uintptr_t mmu_map_page(void* laddr, uint8_t flags) {
+  uintptr_t paddr = pmmu_get_page();
+  lmmu_map_page(paddr, laddr, flags);
+  return paddr;
 }
 
 void mmu_unmap_page(void* laddr) {
@@ -26,8 +28,8 @@ void mmu_set_page_flags(void* laddr, uint8_t flags) {
   lmmu_set_page_flags(laddr, flags);
 }
 
-void mmu_map_system_rw_page(void* laddr) {
-  mmu_map_page(laddr, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
+uintptr_t mmu_map_system_rw_page(void* laddr) {
+  return mmu_map_page(laddr, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 }
 
 void mmu_map_user_rw_page(void* laddr) {
@@ -43,20 +45,19 @@ static uintptr_t mmu_clone_page(int pt, int pg) {
   return lmmu_unmap_page(new);
 }
 
-static uintptr_t mmu_clone_page_table(int pt) {
+static uintptr_t mmu_clone_page_table(int pt, int attrs) {
   uint32_t* old = (uint32_t*)(0xFFC00000 + pt * PAGESIZE);
   uint32_t* new = (uint32_t*)0xEFFFE000;
   mmu_map_system_rw_page(new);
   for (int i = 0; i < 1024; i++) {
-    if (!(old[i] & MMU_PAGE_PRESENT)) {
-      new[i] = 0;
-      continue;
-    }
-    if (!(old[i] & MMU_PAGE_USER)) {
+    const uintptr_t addr = (pt << 22) | (i << 12);
+    if (addr == 0x000B8000) {
       new[i] = old[i];
-      continue;
+    } else if (old[i] & MMU_PAGE_PRESENT) {
+      new[i] = mmu_clone_page(pt, i) | attrs;
+    } else {
+      new[i] = 0;
     }
-    new[i] = mmu_clone_page(pt, i) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
   }
   return lmmu_unmap_page(new);
 }
@@ -64,18 +65,25 @@ static uintptr_t mmu_clone_page_table(int pt) {
 uintptr_t mmu_clone_address_space(void) {
   uint32_t* old = (uint32_t*)0xFFFFF000;
   uint32_t* new = (uint32_t*)0xEFFFF000;
-  mmu_map_system_rw_page(new);
-  for (int i = 0; i < 1024; i++) {
-    if (!(old[i] & MMU_PAGE_PRESENT)) {
+  uintptr_t new_pde_paddr = mmu_map_system_rw_page(new);
+  // Copy the non-kernel pages.
+  for (int i = 0; i < 768; i++) {
+    if (old[i] & MMU_PAGE_PRESENT) {
+      // TODO: copy the attrs.
+      const int attrs = MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
+      new[i] = mmu_clone_page_table(i, attrs) | attrs;
+    } else {
       new[i] = 0;
-      continue;
     }
-    if (!(old[i] & MMU_PAGE_USER)) {
-      new[i] = old[i];
-      continue;
-    }
-    new[i] = mmu_clone_page_table(i) | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
   }
+  // Map the exact same kernel pages.
+  for (int i = 768; i < 1023; i++) {
+    if (old[i] & MMU_PAGE_PRESENT) {
+      new[i] = old[i];
+    }
+  }
+  // Map the page directory to itself.
+  new[1023] = new_pde_paddr | MMU_PAGE_PRESENT | MMU_PAGE_WRITE;
   return lmmu_unmap_page(new);
 }
 
