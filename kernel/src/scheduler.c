@@ -22,5 +22,5 @@ void scheduler_yield(void) {
     }
     next = next->next;
   }
-  PANIC("no process to yield to");
+  PANIC("no process to yield to\n");
 }
