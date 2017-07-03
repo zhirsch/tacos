@@ -21,8 +21,7 @@ ssize_t sys_write(int fd, const void* buf, size_t count, struct isr_frame* frame
   if (current_process->fds[fd].type == PROCESS_FD_CLOSED) {
     return -EBADF;
   }
-  if (!(current_process->fds[fd].mode & O_WRONLY) &&
-      !(current_process->fds[fd].mode & O_RDWR)) {
+  if (current_process->fds[fd].mode & O_RDONLY) {
     return -EBADF;
   }
   if (current_process->fds[fd].type == PROCESS_FD_FILE) {

@@ -2,27 +2,30 @@
 
 #include <stddef.h>
 
-#include "bits/types.h"
+#include "bits/errno.h"
+#include "bits/fcntl.h"
 
-#include "interrupts.h"
-#include "string.h"
+#include "log.h"
+#include "process.h"
+#include "tty.h"
 
-static const char CMD[] = "env\n";
-static unsigned int pos = 0;
-
-static int min(int a, int b) {
-  if (a < b) {
-    return a;
-  }
-  return b;
-}
+#define PANIC(...) panic("SYSCALL [read]", __VA_ARGS__)
 
 ssize_t sys_read(int fd, void* buf, size_t size, struct isr_frame* frame) {
-  if (pos >= strlen(CMD) + 1) {
-    return 0;
+  if (buf == NULL) {
+    return -EFAULT;
   }
-  size = min(size, strlen(CMD) + 1 - pos);
-  memcpy((void*)buf, CMD + pos, size);
-  pos += size;
-  return size;
+  if (current_process->fds[fd].type == PROCESS_FD_CLOSED) {
+    return -EBADF;
+  }
+  if (current_process->fds[fd].mode & O_WRONLY) {
+    return -EBADF;
+  }
+  if (current_process->fds[fd].type == PROCESS_FD_FILE) {
+    PANIC("PROCESS_FD_FILE NOT IMPLEMENTED\n");
+  }
+  if (current_process->fds[fd].type == PROCESS_FD_TTY) {
+    return tty_read(current_process->fds[fd].u.tty, buf, size);
+  }
+  return -EBADF;
 }

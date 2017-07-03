@@ -40,6 +40,7 @@ struct process {
   enum {
     PROCESS_ALIVE,
     PROCESS_ZOMBIE,
+    PROCESS_IOWAIT,
   } state;
 
   // The state of the process for waitpid(2).
