@@ -11,9 +11,8 @@
 #include "iso9660.h"
 #include "ldsyms.h"
 #include "log.h"
-#include "mmu/common.h"
 #include "mmu/heap.h"
-#include "mmu/linear.h"
+#include "mmu/mmu.h"
 #include "multiboot.h"
 #include "pic.h"
 #include "portio.h"
@@ -165,7 +164,7 @@ static void start_init(const char* cmdline) {
   current_process->tss.gs     = SEGMENT_USER_DATA;
   current_process->tss.ss0    = SEGMENT_KERNEL_DATA;
   current_process->tss.esp0   = (uintptr_t)&kernel_stack_start;
-  current_process->tss.cr3    = (uintptr_t)lmmu_get_cr3();
+  current_process->tss.cr3    = (uintptr_t)mmu_get_cr3();
   current_process->tss.eflags = 0x0200;  // IF=1
 
   // Since this is the first process, link it to itself.

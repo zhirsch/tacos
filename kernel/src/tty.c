@@ -1,8 +1,8 @@
 #include "tty.h"
 
 #include "log.h"
-#include "mmu/common.h"
 #include "mmu/heap.h"
+#include "mmu/mmu.h"
 #include "process.h"
 #include "screen.h"
 

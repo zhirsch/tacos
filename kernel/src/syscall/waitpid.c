@@ -1,5 +1,7 @@
 #include "syscalls/syscalls.h"
 
+#include <stdbool.h>
+
 #include "bits/errno.h"
 #include "bits/types.h"
 #include "bits/wait.h"

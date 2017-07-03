@@ -4,7 +4,7 @@
 
 #include "ldsyms.h"
 #include "log.h"
-#include "mmu/common.h"
+#include "mmu/mmu.h"
 #include "string.h"
 
 #define PANIC(...) panic("HEAP", __VA_ARGS__)
@@ -21,7 +21,7 @@ void* kmalloc(size_t size) {
     PANIC("kmalloc(%ld) out of heap\n", size);
   }
   while (heap < ptr + size) {
-    mmu_map_page((void*)heap, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
+    mmu_map_page((void*)heap, kPagePresent | kPageWrite);
     heap += PAGESIZE;
   }
   return (void*)ptr;

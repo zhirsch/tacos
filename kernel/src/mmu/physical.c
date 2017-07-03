@@ -6,7 +6,7 @@
 
 #include "ldsyms.h"
 #include "log.h"
-#include "mmu/common.h"
+#include "mmu/mmu.h"
 #include "multiboot.h"
 
 #define LOG(...) log("PMMU", __VA_ARGS__)

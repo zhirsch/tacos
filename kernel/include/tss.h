@@ -1,7 +1,7 @@
 #ifndef TSS_H
 #define TSS_H
 
-#include "mmu/common.h"
+#include "mmu/mmu.h"
 
 struct tss {
   unsigned int prev_task_link : 16;  // 0x00
