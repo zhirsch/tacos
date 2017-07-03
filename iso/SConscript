@@ -10,6 +10,7 @@ iso = env.ISO(
         'root/boot/grub/stage2_eltorito',
         'root/boot/tacos',
         'root/usr/bin/env',
+        'root/usr/bin/perm',
     ],
     MKISOFSFLAGS = [
         '-R',

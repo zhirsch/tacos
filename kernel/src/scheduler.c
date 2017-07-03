@@ -22,5 +22,7 @@ void scheduler_yield(void) {
     }
     next = next->next;
   }
-  PANIC("no process to yield to\n");
+
+  // This should only happen when the current process is the idle process.
+  // LOG("no process to yield to\n");
 }

@@ -22,6 +22,9 @@
 #define SEGMENT_USER_DATA   ((4 << 3) | 0x3)
 
 struct process {
+  // The TSS for storing the interrupted state of the process.
+  struct tss tss;
+
   // The pids of this process, its parent, and its process group.
   pid_t pid;
   pid_t ppid;
@@ -77,9 +80,6 @@ struct process {
   // The current working directory for the process.
   const char* cwd;
 
-  // The TSS for storing the interrupted state of the process.
-  struct tss tss;
-
   // The location of the program break, where the heap grows from.
   uintptr_t program_break;
 
@@ -99,10 +99,14 @@ extern struct process* current_process;
 pid_t process_next_pid(void);
 pid_t process_next_pgid(void);
 
+typedef void(*entry_point_t)() __attribute__((noreturn));
+
+struct process* process_create(entry_point_t entry, struct process* template, ...);
+
 int process_fork(struct process** child, struct isr_frame* parent_frame);
 
 // Starts the process by switching to ring3 at the eip configured in the tss.
-void process_start(struct tss* tss) __attribute__ ((noreturn));
+void process_start(void) __attribute__ ((noreturn));
 
 // Switches to a new process.  When this returns, the new process will be
 // running in kernel mode.

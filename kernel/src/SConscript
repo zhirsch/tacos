@@ -58,6 +58,8 @@ objects += env.SConscript(
 objects += env.Object([
     'elf.c',
     'fpu.c',
+    'idle.c',
+    'init.c',
     'interrupts.c',
     'iso9660.c',
     'kmain.c',

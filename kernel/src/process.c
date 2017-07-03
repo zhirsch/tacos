@@ -1,5 +1,6 @@
 #include "process.h"
 
+#include <stdarg.h>
 #include <stddef.h>
 
 #include "log.h"
@@ -12,6 +13,7 @@
 #include "mmu/heap.h"
 #include "scheduler.h"
 #include "string.h"
+#include "tty.h"
 
 #define LOG(...) log("PROCESS", __VA_ARGS__)
 #define PANIC(...) panic("PROCESS", __VA_ARGS__)
@@ -28,44 +30,44 @@ pid_t process_next_pgid(void) {
   return next_pgid++;
 }
 
-int process_fork(struct process** childp, struct isr_frame* parent_frame) {
-  struct process* child = NULL;
+struct process* process_create(entry_point_t entry, struct process* template, ...) {
+  struct process* process = kcalloc(1, sizeof(struct process));
 
-  child = *childp = kmalloc(sizeof(*child));
-  memcpy(child, current_process, sizeof(*child));
+  // Prepare the process.
+  process->pid            = process_next_pid();
+  process->ppid           = template != NULL ? template->pid : 0;
+  process->pgid           = template != NULL ? template->pgid : process_next_pgid();
+  process->uid            = template != NULL ? template->uid : 0;   // root
+  process->euid           = template != NULL ? template->euid : 0;  // root
+  process->gid            = template != NULL ? template->gid : 0;   // root
+  process->egid           = template != NULL ? template->egid : 0;  // root
+  process->state          = PROCESS_ALIVE;
+  process->wait_state     = PROCESS_WAIT_NONE;
+  process->status         = 0;
+  process->tty            = template != NULL ? template->tty : NULL;
+  if (template != NULL) {
+    memcpy(&process->fds, &template->fds, sizeof(process->fds));
+    memcpy(&process->sigactions, &template->sigactions, sizeof(process->sigactions));
+  }
+  process->argc           = template != NULL ? template->argc : 0;
+  process->argv           = template != NULL ? template->argv : NULL;
+  process->envp           = template != NULL ? template->envp : NULL;
+  process->cwd            = template != NULL ? template->cwd : "/";
+  process->program_break  = template != NULL ? template->program_break : 0;
+  process->children       = NULL;
+  process->next           = NULL;
 
-  // Set the child process's pid and ppid.
-  child->pid = process_next_pid();
-  child->ppid = current_process->pid;
+  process->tss.cs = SEGMENT_KERNEL_CODE;
+  process->tss.ss = SEGMENT_KERNEL_DATA;
+  process->tss.ds = process->tss.ss;
+  process->tss.es = process->tss.ss;
+  process->tss.fs = process->tss.ss;
+  process->tss.gs = process->tss.ss;
 
-  // Set the child process's state.
-  child->state = PROCESS_ALIVE;
+  process->tss.eip = (uintptr_t)entry;
 
-  // Set the child process's wait state.
-  child->wait_state = PROCESS_WAIT_NONE;
-  child->status = 0;
-
-  // The child process has no children.
-  child->children = NULL;
-
-  // Set the tss.
-  memset(&child->tss, 0, sizeof(child->tss));
-  child->tss.eip = parent_frame->user_eip;
-  child->tss.eflags = parent_frame->user_eflags;
-  child->tss.eax = parent_frame->eax;
-  child->tss.ecx = parent_frame->ecx;
-  child->tss.edx = parent_frame->edx;
-  child->tss.ebx = parent_frame->ebx;
-  child->tss.esp = parent_frame->user_esp;
-  child->tss.ebp = parent_frame->ebp;
-  child->tss.esi = parent_frame->esi;
-  child->tss.edi = parent_frame->edi;
-  child->tss.cs = parent_frame->user_cs;
-  child->tss.ss = parent_frame->user_ss;
-  child->tss.ds = parent_frame->user_ss;
-  child->tss.es = parent_frame->user_ss;
-  child->tss.fs = parent_frame->user_ss;
-  child->tss.gs = parent_frame->user_ss;
+  // Create a copy of the current address space.
+  process->tss.cr3 = mmu_clone_address_space();
 
   // The child process starts when the scheduler decides to run it.  When that
   // happens, process_switch is called with it's tss, so the child process's tss
@@ -84,34 +86,64 @@ int process_fork(struct process** childp, struct isr_frame* parent_frame) {
   // Below the emulated stack for process_switch, the stack is set up for a
   // "call" to process_start.  The stack looks like:
   //
-  //   child's tss (arg1)
   //   return address
   //
   // Since process_start never returns, the return address is unimportant.
   {
     // Create the kernel stack for the child process.
-    // TODO: Align on page boundary.
-    uint32_t* esp0 = (uint32_t*)kmalloc(0x4000) + 0x4000 / sizeof(uint32_t);
+    // TODO: Explicitly align on page boundary.
+    uint32_t* esp0 = (uint32_t*)((uintptr_t)kmalloc(0x4000) + 0x4000);
+    assert((uintptr_t)esp0 % PAGESIZE == 0);
 
-    // process_start's stack
-    *(--esp0) = (uintptr_t)&child->tss;    // arg1
+    // Set the kernel stack for a call to the entry point.
+    {
+      va_list ap;
+      void* arg;
+
+      va_start(ap, template);
+      while ((arg = va_arg(ap, void*)) != NULL) {
+        *(--esp0) = (uint32_t)arg;
+      }
+      va_end(ap);
+    }
     *(--esp0) = 0;                         // ret addr
 
     // process_switch's stack
-    *(--esp0) = (uintptr_t)process_start;  // ret addr
+    *(--esp0) = (uintptr_t)entry;          // ret addr
     *(--esp0) = 0;                         // caller's ebp
     for (int i = 0; i < 8; i++) {          // pusha
       *(--esp0) = 0;
     }
-    *(--esp0) = (uintptr_t)child;          // pointer to child process
+    *(--esp0) = (uintptr_t)process;        // pointer to process
 
-    // Set esp0 in the tss.
-    child->tss.ss0 = SEGMENT_KERNEL_DATA;
-    child->tss.esp0 = (uintptr_t)esp0;
+    process->tss.ss0 = SEGMENT_KERNEL_DATA;
+    process->tss.esp0 = (uintptr_t)esp0;
   }
 
-  // Create a copy of the current address space.
-  child->tss.cr3 = mmu_clone_address_space();
+  return process;
+}
+
+int process_fork(struct process** childp, struct isr_frame* parent_frame) {
+  struct process* child = process_create(process_start, current_process);
+  *childp = child;
+
+  // Set the tss.
+  child->tss.eip = parent_frame->user_eip;
+  child->tss.eflags = parent_frame->user_eflags;
+  child->tss.eax = parent_frame->eax;
+  child->tss.ecx = parent_frame->ecx;
+  child->tss.edx = parent_frame->edx;
+  child->tss.ebx = parent_frame->ebx;
+  child->tss.esp = parent_frame->user_esp;
+  child->tss.ebp = parent_frame->ebp;
+  child->tss.esi = parent_frame->esi;
+  child->tss.edi = parent_frame->edi;
+  child->tss.cs = parent_frame->user_cs;
+  child->tss.ss = parent_frame->user_ss;
+  child->tss.ds = parent_frame->user_ss;
+  child->tss.es = parent_frame->user_ss;
+  child->tss.fs = parent_frame->user_ss;
+  child->tss.gs = parent_frame->user_ss;
 
   // TODO: The child does not inherit its parent's memory locks (mlock(2), mlockall(2)).
   // TODO: Process resource utilizations (getrusage(2)) and CPU time counters (times(2)) are reset to zero in the child.

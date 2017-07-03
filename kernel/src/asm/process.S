@@ -2,13 +2,13 @@
 
         .text
         .global process_start
-        // void process_start(struct tss* tss)
+        // void process_start(void)
 process_start:
         push  %ebp
         mov   %esp, %ebp
 
-        // arg1 = tss
-        mov   0x8(%ebp), %edx
+        // The TSS is the first field of the process struct.
+        mov   current_process, %edx
 
         // Set all the segment registers.
         mov   DS(%edx), %ax
