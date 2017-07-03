@@ -3,4 +3,4 @@ timeout 0
 
 title TacOS
   root (cd)
-  kernel /boot/tacos init=/dash
+  kernel /boot/tacos init=/bin/dash

@@ -5,10 +5,10 @@ Import(['env', 'kernel', 'user'])
 iso = env.ISO(
     target = 'tacos.iso',
     source = [
+        'root/bin/dash',
         'root/boot/grub/menu.lst',
         'root/boot/grub/stage2_eltorito',
         'root/boot/tacos',
-        'root/dash',
         'root/usr/bin/env',
     ],
     MKISOFSFLAGS = [
@@ -28,7 +28,7 @@ def CopyFile(target, source):
 CopyFile(env.File('root/boot/grub/menu.lst'), env.File('#iso/root/boot/grub/menu.lst'))
 CopyFile(env.File('root/boot/grub/stage2_eltorito'), env.File('#iso/root/boot/grub/stage2_eltorito'))
 CopyFile(env.File('root/boot/tacos'), kernel)
-CopyFile(env.File('root/dash'), env.File('#toolchain/install/bin/dash'))
+CopyFile(env.File('root/bin/dash'), env.File('#toolchain/install/bin/dash'))
 for binary in user:
     binary.env.Strip(target = env.File('root/usr/bin/%s' % binary.name), source = binary)
 
