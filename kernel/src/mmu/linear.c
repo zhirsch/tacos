@@ -24,30 +24,12 @@ static inline void invlpg(const void* addr) {
   __asm__ __volatile__ ("invlpg %0" : : "m" (*(const char*)addr) : "memory");
 }
 
-static uintptr_t get_page_directory_index(const void* addr) {
-  return ((uintptr_t)addr) >> 22;
+static inline uintptr_t* pde(const void* addr) {
+  return &g_page_directory[((uintptr_t)addr) >> 22];
 }
 
-static inline uintptr_t get_page_directory_entry(const void* addr) {
-  return g_page_directory[get_page_directory_index(addr)];
-}
-
-static inline void set_page_directory_entry(const void* addr, uintptr_t entry) {
-  g_page_directory[get_page_directory_index(addr)] = entry;
-  invlpg(addr);
-}
-
-static uintptr_t get_page_table_index(const void* addr) {
-  return ((uintptr_t)addr) >> 12;
-}
-
-static inline uintptr_t get_page_table_entry(const void* addr) {
-  return g_page_tables[get_page_table_index(addr)];
-}
-
-static inline void set_page_table_entry(const void* addr, uintptr_t entry) {
-  g_page_tables[get_page_table_index(addr)] = entry;
-  invlpg(addr);
+static inline uintptr_t* pte(const void* addr) {
+  return &g_page_tables[((uintptr_t)addr) >> 12];
 }
 
 extern uintptr_t kernel_pagedir[1024];
@@ -57,7 +39,8 @@ void init_lmmu() {
   interrupt_register_handler(0xe, page_fault_handler);
 
   // Remove the identity mapping for the first page, except for VGA memory.
-  set_page_directory_entry((void*)(0x0000000), 0);
+  *pde((void*)(0x0000000)) = 0;
+  invlpg(0x00000000);
   lmmu_map_page(0x000B8000, (void*)0x000B8000, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
 
   // Update the page directory to reflect the right permissions and unmapped pages.
@@ -83,60 +66,40 @@ void init_lmmu() {
 }
 
 void lmmu_map_page(uintptr_t paddr, void* laddr, uint8_t flags) {
-  if (!(get_page_directory_entry(laddr) & MMU_PAGE_PRESENT)) {
+  if (!(*pde(laddr) & MMU_PAGE_PRESENT)) {
     LOG("Mapping new page table page for %p\n", laddr);
-    set_page_directory_entry(laddr, pmmu_get_page() | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER);
+    *pde(laddr) = pmmu_get_page() | MMU_PAGE_PRESENT | MMU_PAGE_WRITE | MMU_PAGE_USER;
+    invlpg(laddr);
   }
-  set_page_table_entry(laddr, paddr | (flags & 0xFFF));
+  *pte(laddr) = paddr | (flags & 0xFFF);
+  invlpg(laddr);
 }
 
-uintptr_t lmmu_unmap_page(void* laddr) {
-  const uintptr_t pte = get_page_table_entry(laddr);
-  if (!(pte & MMU_PAGE_PRESENT)) {
-    PANIC("mmu_unmap_page(%p) is unmapped: %08lx\n", laddr, pte);
+void lmmu_unmap_page(void* laddr) {
+  if (!(*pte(laddr) & MMU_PAGE_PRESENT)) {
+    PANIC("lmmu_unmap_page(%p) is unmapped\n", laddr);
   }
-  set_page_table_entry(laddr, 0);
-  return (pte & 0xFFFFF000);
+  *pte(laddr) = 0;
+  invlpg(laddr);
 }
 
-void lmmu_set_page_flags(void* addr, uint8_t flags) {
-  const uintptr_t pte = get_page_table_entry(addr);
-  if (!(pte & MMU_PAGE_PRESENT)) {
-    PANIC("mmu_set_page_flags(%p) is unmapped: %08lx\n", addr, pte);
+uintptr_t lmmu_get_paddr(void* laddr) {
+  if (!(*pte(laddr) & MMU_PAGE_PRESENT)) {
+    PANIC("lmmu_get_paddr(%p) is unmapped\n", laddr);
   }
-  set_page_table_entry(addr, (pte & 0xFFFFF000) | (flags & 0xFFF));
+  return (*pte(laddr) & 0xFFFFF000);
 }
 
-void lmmu_reset_cr3(void) {
-  for (int i = 0; i < 1024; i++) {
-    const uintptr_t addr_hi = (i << 22);
-    const uintptr_t pde = get_page_directory_entry((void*)addr_hi);
-    if (!(pde & MMU_PAGE_PRESENT)) {
-      // Skip non-present page directory entries.
-      continue;
-    }
-    if (!(pde & MMU_PAGE_USER)) {
-      // Don't unmap kernel page directory entries.
-      continue;
-    }
-    for (int j = 0; j < 1024; j++) {
-      const uintptr_t addr = addr_hi | (j << 12);
-      const uintptr_t pte = get_page_table_entry((void*)addr);
-      if (!(pte & MMU_PAGE_PRESENT)) {
-        // Skip non-present page table entries.
-        continue;
-      }
-      if (addr == 0x000B8000) {
-        // Don't unmap the direct access to VGA memory.
-        continue;
-      }
-      if (!(pte & MMU_PAGE_USER)) {
-        // Don't unmap kernel page table entries.
-        continue;
-      }
-      pmmu_put_page(lmmu_unmap_page((void*)addr));
-    }
+uint8_t lmmu_get_pde_flags(void* addr) { return *pde(addr) & 0xFFF; }
+
+uint8_t lmmu_get_pte_flags(void* addr) { return *pte(addr) & 0xFFF; }
+
+void lmmu_set_pte_flags(void* addr, uint8_t flags) {
+  if (!(*pte(addr) & MMU_PAGE_PRESENT)) {
+    PANIC("mmu_set_pte_flags(%p) is unmapped\n", addr);
   }
+  *pte(addr) |= flags & 0xFFF;
+  invlpg(addr);
 }
 
 uintptr_t lmmu_get_cr3(void) {

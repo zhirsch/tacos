@@ -5,10 +5,6 @@
 
 #include "mmu/common.h"
 
-static inline uintptr_t mmu_round_to_next_page(uintptr_t addr) {
-  return (addr & ~(PAGESIZE - 1)) + (addr % PAGESIZE > 0) * PAGESIZE;
-}
-
 // Initialize the linear MMU.  Should only be called once.
 void init_lmmu();
 
@@ -20,15 +16,19 @@ void lmmu_map_page(uintptr_t paddr, void* laddr, uint8_t flags);
 
 // Unmap a virtual address.  Does not free any physical pages.  Returns the
 // address of the physical page that was mapped.
-uintptr_t lmmu_unmap_page(void* laddr);
+void lmmu_unmap_page(void* laddr);
+
+// Gets the physical address of a linear page.
+uintptr_t lmmu_get_paddr(void* laddr);
+
+// Gets the flags for the page.
+uint8_t lmmu_get_pde_flags(void* laddr);
+uint8_t lmmu_get_pte_flags(void* laddr);
 
 // Sets the flags for the page.
-void lmmu_set_page_flags(void* laddr, uint8_t flags);
+void lmmu_set_pte_flags(void* laddr, uint8_t flags);
 
 // Gets the value of the cr3 register.
 uintptr_t lmmu_get_cr3(void);
-
-// Unmaps all pages in the current page directory, except for the kernel.
-void lmmu_reset_cr3(void);
 
 #endif /* MMU_LINEAR_H */

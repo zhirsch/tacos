@@ -21,7 +21,7 @@ void* kmalloc(size_t size) {
     PANIC("kmalloc(%ld) out of heap\n", size);
   }
   while (heap < ptr + size) {
-    mmu_map_system_rw_page((void*)heap);
+    mmu_map_page((void*)heap, MMU_PAGE_PRESENT | MMU_PAGE_WRITE);
     heap += PAGESIZE;
   }
   return (void*)ptr;

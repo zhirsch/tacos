@@ -8,7 +8,7 @@
 #include "file.h"
 #include "interrupts.h"
 #include "log.h"
-#include "mmu/common.h"
+#include "mmu/address_space.h"
 #include "mmu/heap.h"
 #include "scheduler.h"
 #include "string.h"

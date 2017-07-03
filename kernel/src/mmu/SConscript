@@ -3,6 +3,7 @@ Import('env')
 
 # Compile the sources.
 objects = env.Object([
+    'address_space.c',
     'common.c',
     'heap.c',
     'linear.c',

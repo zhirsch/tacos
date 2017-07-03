@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 #include "log.h"
+#include "mmu/address_space.h"
 #include "mmu/heap.h"
 #include "mmu/linear.h"
-#include "mmu/physical.h"
 #include "process.h"
 #include "string.h"
 
@@ -48,8 +48,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   kernel_envp[envc] = NULL;
 
   // Reset the address space to prepare for the new process.
-  // TODO: Free the exiting pages.
-  lmmu_reset_cr3();
+  mmu_free_address_space();
 
   // Parse the elf header.
   if (!check_elf_header(ehdr)) {
@@ -66,7 +65,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   kfree(ehdr);
 
   // Copy envp into the address space.
-  mmu_map_user_rw_page((void*)end);
+  mmu_map_page((void*)end, MMU_PAGE_PRESENT | MMU_PAGE_USER | MMU_PAGE_WRITE);
   LOG("envp is at %08lx\n", end);
   current_process->envp = (char**)end;
   (void)make_envp_argv(current_process->envp, kernel_envp);
@@ -74,7 +73,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   end += PAGESIZE;
 
   // Copy argv into the address space.
-  mmu_map_user_rw_page((void*)end);
+  mmu_map_page((void*)end, MMU_PAGE_PRESENT | MMU_PAGE_USER | MMU_PAGE_WRITE);
   LOG("argv is at %08lx\n", end);
   current_process->argv = (char**)end;
   current_process->argc = make_envp_argv(current_process->argv, kernel_argv);
@@ -82,7 +81,7 @@ void elf_exec(struct Elf32_Ehdr* ehdr, char* const argv[], char* const envp[]) {
   end += PAGESIZE;
 
   // Create the stack for the new process.
-  mmu_map_user_rw_page((void*)end);
+  mmu_map_page((void*)end, MMU_PAGE_PRESENT | MMU_PAGE_USER | MMU_PAGE_WRITE);
   LOG("esp  is at %08lx\n", end);
   {
     uint32_t* new_stack = (uint32_t*)(end + PAGESIZE);
@@ -157,7 +156,7 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
       uintptr_t dst;
       // Map the pages for the segment.
       for (dst = dst_base; dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        mmu_map_user_rw_page((void*)dst);
+        mmu_map_page((void*)dst, MMU_PAGE_PRESENT | MMU_PAGE_USER | MMU_PAGE_WRITE);
       }
       // Copy the data into the segment.
       memcpy((void*)dst_base, (void*)src_base, phdr->p_filesz);
@@ -165,7 +164,7 @@ static bool map_segments(const struct Elf32_Ehdr* ehdr, uintptr_t* end) {
       memset((void*)bss_base, 0, bss_size);
       // Set the access permissions for the segment.
       for (dst = dst_base; dst < phdr->p_vaddr + phdr->p_memsz; dst += PAGESIZE) {
-        mmu_set_page_flags((void*)dst, MMU_PAGE_PRESENT | MMU_PAGE_USER | perm);
+        lmmu_set_pte_flags((void*)dst, MMU_PAGE_PRESENT | MMU_PAGE_USER | perm);
       }
       *end = dst;
       break;

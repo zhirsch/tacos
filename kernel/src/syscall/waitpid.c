@@ -6,7 +6,7 @@
 
 #include "interrupts.h"
 #include "log.h"
-#include "mmu/common.h"
+#include "mmu/address_space.h"
 #include "mmu/heap.h"
 #include "process.h"
 #include "scheduler.h"
@@ -60,7 +60,8 @@ static pid_t inspect_child_process(struct process* child, int* status, int optio
     }
 
     // Free the pages in the address space.
-    mmu_free_address_space(child->tss.cr3);
+    // TODO: Switch to the child's address space and free it.
+    // mmu_free_address_space(child->tss.cr3);
 
     // Free the struct process object.
     kfree(child);
