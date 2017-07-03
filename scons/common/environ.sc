@@ -12,20 +12,25 @@ env.Append(CFLAGS=['-Wall',
                    '-Wextra',
                    '-Wno-unused-parameter',
                    '-std=c99',
+                   '-fdiagnostics-color=always'
                    ])
 
 # Create a builder for mkisofs
-mkisofs_builder = Builder(action=Action('$MKISOFSCOM', '$MKISOFSCOMSTR'),
-                          source_factory=env.fs.Dir)
-env.Append(BUILDERS={'MkIsoFs': mkisofs_builder})
+mkisofs_builder = Builder(action=Action('$MKISOFSCOM', '$MKISOFSCOMSTR'))
+env.Append(BUILDERS={'ISO': mkisofs_builder})
 env['MKISOFS'] = ARGUMENTS.get('MKISOFS', 'mkisofs')
-env['MKISOFSCOM'] = '$MKISOFS $MKISOFSFLAGS -o $TARGET $SOURCE'
+env['MKISOFSCOM'] = '$MKISOFS $MKISOFSFLAGS -o $TARGET $ROOT'
 env['MKISOFSCOMSTR'] = '$MKISOFSCOM'
 
 # Create a builder for sed
 env.Append(BUILDERS={'Sed': Builder(action=Action('$SEDCOM', '$SEDCOMSTR'))})
 env['SEDCOM'] = 'sed -e"$PATTERN" < $SOURCE > $TARGET'
 env['SEDCOMSTR'] = '$SEDCOM'
+
+# Create a builder for strip
+env.Append(BUILDERS={'Strip': Builder(action=Action('$STRIPCOM', '$STRIPCOMSTR'))})
+env['STRIPCOM'] = '$STRIP -s -o $TARGET $SOURCE'
+env['STRIPCOMSTR'] = '$STRIPCOM'
 
 # Set the output patterns when verbose is disabled
 if not env['V']:
@@ -35,6 +40,7 @@ if not env['V']:
     env['MKISOFSCOMSTR'] = '  MKISOFS           $TARGET'
     env['SEDCOMSTR']     = '  SED               $TARGET'
     env['COPYSTR']       = '  COPY              $TARGET'
+    env['STRIPCOMSTR']   = '  STRIP             $TARGET'
     SCons.Script.Copy.strfunc = lambda d, s: env.subst('$COPYSTR', 1, target=d)
 
 # Return the environment to the calling SConscript file

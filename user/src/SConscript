@@ -4,6 +4,7 @@ Import('env')
 # Create the SCons environment.
 env = env.Clone(
     CC = 'toolchain/install/bin/i686-pc-tacos-gcc',
+    STRIP = 'toolchain/install/bin/i686-pc-tacos-strip',
     CCFLAGS = [
         '-Wall',
         '-Wextra',
