@@ -7,13 +7,15 @@ Import('opts')
 
 # Create common build environment
 env = Environment(options=opts)
-env.Append(CFLAGS=['-Wall',
-                   '-Werror',
-                   '-Wextra',
-                   '-Wno-unused-parameter',
-                   '-std=c99',
-                   '-fdiagnostics-color=always'
-                   ])
+env.Append(CFLAGS=[
+    '-Wall',
+    '-Werror',
+    '-Wextra',
+    '-Wno-unused-parameter',
+    '-std=c99',
+])
+if env["COLOR"]:
+    env.Append(CFLAGS=["-fdiagnostics-color"])
 
 # Create a builder for mkisofs
 mkisofs_builder = Builder(action=Action('$MKISOFSCOM', '$MKISOFSCOMSTR'))

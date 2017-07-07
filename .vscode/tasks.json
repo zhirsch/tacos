@@ -1,0 +1,27 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "0.1.0",
+    "command": "python",
+    "isShellCommand": true,
+    "args": [
+        "/Users/zhirsch/Documents/scons/scons.py",
+        "-u",
+        "-j8",
+        "PYTHONPATH=/Users/zhirsch/Documents/pyyaml/lib/python2.7/site-packages",
+        "MKISOFS=/Users/zhirsch/bin/mkisofs",
+        "COLOR=no"],
+    "showOutput": "always",
+    "problemMatcher": {
+        "owner": "cpp",
+        "fileLocation": ["relative", "${workspaceRoot}"],
+        "pattern": {
+            "regexp": "^bld/(debug|release)/(.*):(\\d+):(\\d+): (warning|error): (.*)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "severity": 5,
+            "message": 6
+        }
+    }
+}
