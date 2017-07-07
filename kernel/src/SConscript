@@ -47,6 +47,7 @@ env = env.Clone(
 objects, boot = env.SConscript(dirs = 'asm', exports = 'env')
 objects += env.SConscript(
     dirs = [
+        'drivers',
         'ide',
         'mmu',
         'syscall',

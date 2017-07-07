@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "dt.h"
+#include "drivers/keyboard.h"
 #include "elf.h"
 #include "file.h"
 #include "fpu.h"
@@ -64,6 +65,7 @@ void kmain(int magic, multiboot_info_t* mbi) {
   init_interrupts();
   init_pic(0x20, 0x28);
   init_syscalls();
+  init_keyboard();
 
   // Initialize IDE.
   init_ide();

@@ -1,0 +1,8 @@
+# -*- mode: python -*-
+Import('env')
+
+objects = env.Object([
+    'keyboard.c',
+])
+
+Return(['objects'])

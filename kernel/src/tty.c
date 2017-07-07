@@ -9,6 +9,7 @@
 #include "string.h"
 
 #define FRAMEBUF_SIZE (10 * PAGESIZE * sizeof(uint16_t))
+#define INPUTBUF_SIZE PAGESIZE
 
 #define LOG(...) log("TTY", __VA_ARGS__)
 #define PANIC(...) log("TTY", __VA_ARGS__)
@@ -25,10 +26,9 @@ void init_tty(void) {
     ttys[i].framebuf_pos  = 0;
     ttys[i].framebuf      = kmalloc(FRAMEBUF_SIZE);
 
-    // Prepare the input ringbuf.
-    memcpy(ttys[i].input_ringbuf, "env\n", 4);
-    ttys[i].input_ringbuf_start = 0;
-    ttys[i].input_ringbuf_end = 4;
+    // Allocate the input buffer.
+    ttys[i].inputbuf_pos = 0;
+    ttys[i].inputbuf     = kmalloc(INPUTBUF_SIZE);
   }
   // The initial active TTY is arbitrarily the first TTY.
   active_tty = &ttys[0];
@@ -47,28 +47,29 @@ static size_t min(size_t lhs, size_t rhs) {
 }
 
 int tty_read(struct tty* tty, void* buf, size_t count) {
-  size_t ringbuf_avail;
   if (current_process != NULL && tty->pgid != current_process->pgid) {
     PANIC("Background process tried to read from tty\n");
   }
   if (count == 0) {
     return 0;
   }
-  do {
-    if (tty->input_ringbuf_end >= tty->input_ringbuf_start) {
-      ringbuf_avail = tty->input_ringbuf_end - tty->input_ringbuf_start;
-    } else {
-      ringbuf_avail = TTY_INPUT_RINGBUF_SIZE - (tty->input_ringbuf_start - tty->input_ringbuf_end);
-    }
-    if (ringbuf_avail == 0) {
-      current_process->state = PROCESS_IOWAIT;
-      scheduler_yield();
-    }
-  } while (ringbuf_avail == 0);
-  count = min(count, ringbuf_avail);
-  memcpy(buf, tty->input_ringbuf + tty->input_ringbuf_start, count);
-  tty->input_ringbuf_start = (tty->input_ringbuf_start + count) % TTY_INPUT_RINGBUF_SIZE;
+  while (tty->inputbuf_pos == 0) {
+    current_process->state = PROCESS_IOWAIT;
+    scheduler_yield();
+  }
+  count = min(count, tty->inputbuf_pos);
+  memcpy(buf, tty->inputbuf, count);
+  tty->inputbuf_pos -= count;
   return count;
+}
+
+static void add_to_framebuf(struct tty* tty, char ch) {
+  tty->framebuf[tty->framebuf_pos] = ch;
+  if (tty == active_tty) {
+    screen_writech(ch);
+  }
+  tty->framebuf_pos++;
+  tty->framebuf_pos %= FRAMEBUF_SIZE;
 }
 
 int tty_write(struct tty* tty, const void* buf, size_t count) {
@@ -78,12 +79,12 @@ int tty_write(struct tty* tty, const void* buf, size_t count) {
   }
   for (size_t i = 0; i < count; i++) {
     const char ch = ((char*)buf)[i];
-    tty->framebuf[tty->framebuf_pos + i] = ch;
-    if (tty == active_tty) {
-      screen_writech(ch);
-    }
-    tty->framebuf_pos++;
-    tty->framebuf_pos %= FRAMEBUF_SIZE;
+    add_to_framebuf(tty, ch);
   }
   return count;
+}
+
+void tty_putch(char ch) {
+  active_tty->inputbuf[active_tty->inputbuf_pos++] = ch;
+  add_to_framebuf(active_tty, ch);
 }
